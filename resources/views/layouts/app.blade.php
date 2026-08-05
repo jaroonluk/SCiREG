@@ -38,13 +38,34 @@
             z-index: 20;
         }
         .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
             font-family: 'Outfit', sans-serif;
             font-weight: 700;
             font-size: 1.25rem;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
             text-decoration: none;
+            line-height: 1;
+            white-space: nowrap;
         }
-        .logo span { color: var(--champaca-deep); }
+        .logo-mark {
+            height: 1.25em;
+            width: auto;
+            display: block;
+            flex-shrink: 0;
+            object-fit: contain;
+        }
+        .logo-text {
+            display: inline-block;
+            letter-spacing: -0.04em;
+        }
+        .logo-text .accent {
+            color: var(--champaca-deep);
+            margin: 0;
+            padding: 0;
+            letter-spacing: inherit;
+        }
         .user {
             display: flex;
             align-items: center;
@@ -126,7 +147,10 @@
         $initial = mb_substr($user->fname ?: $user->email ?: 'U', 0, 1);
     @endphp
     <header class="app-header">
-        <a href="{{ route('home') }}" class="logo">SCi<span>REG</span></a>
+        <a href="{{ route('home') }}" class="logo">
+            <img class="logo-mark" src="{{ asset('faculty-logo-cut.png') }}" alt="ตราสัญลักษณ์คณะวิทยาศาสตร์" width="40" height="40">
+            <span class="logo-text">SCi<span class="accent">REG</span></span>
+        </a>
         <div class="user">
             @if ($avatar)
                 <img class="avatar" src="{{ $avatar }}" alt="รูปโปรไฟล์" referrerpolicy="no-referrer">

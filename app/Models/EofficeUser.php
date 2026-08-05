@@ -13,6 +13,23 @@ class EofficeUser extends Authenticatable
 
     public const PD_LEVEL_RESIGNED = '5';
 
+    /**
+     * Map tbluser.department_id → depart_fee_research.depart_id
+     *
+     * @var array<int, int>
+     */
+    public const RESEARCH_FEE_DEPARTMENT_MAP = [
+        10 => 1, // คณิตศาสตร์
+        6 => 2,  // เคมี
+        9 => 3,  // จุลชีววิทยา
+        11 => 4, // ชีวเคมี
+        8 => 5,  // ชีววิทยา
+        7 => 6,  // ฟิสิกส์
+        4 => 7,  // วิทยาการคอมพิวเตอร์
+        12 => 8, // วิทยาศาสตร์สิ่งแวดล้อม
+        5 => 9,  // สถิติ
+    ];
+
     protected $connection = 'eoffice';
 
     protected $table = 'tbluser';
@@ -29,6 +46,7 @@ class EofficeUser extends Authenticatable
         'title',
         'fname',
         'lname',
+        'department_id',
     ];
 
     protected $hidden = [
@@ -39,6 +57,13 @@ class EofficeUser extends Authenticatable
         'academicTitle',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'department_id' => 'integer',
+        ];
+    }
+
     public function academicTitle(): BelongsTo
     {
         return $this->belongsTo(Title::class, 'title', 'title_id');
@@ -48,7 +73,7 @@ class EofficeUser extends Authenticatable
     {
         return $this->hasOne(Privilege::class, 'username', 'username')
             ->where('system_id', Privilege::SYSTEM_SCIREG)
-            ->where('level', Privilege::LEVEL_ACCESS);
+            ->whereIn('level', Privilege::accessLevels());
     }
 
     public function scopeActiveEmployment(Builder $query): Builder
@@ -88,6 +113,78 @@ class EofficeUser extends Authenticatable
         return $this->relationLoaded('sciregPrivilege')
             ? $this->sciregPrivilege !== null
             : $this->hasSciregAccess();
+    }
+
+    public function sciregLevel(): ?int
+    {
+        $privilege = $this->relationLoaded('sciregPrivilege')
+            ? $this->sciregPrivilege
+            : $this->sciregPrivilege()->first();
+
+        return $privilege?->level;
+    }
+
+    public function sciregRoleLabel(): string
+    {
+        $level = $this->sciregLevel();
+
+        return $level ? Privilege::levelLabel($level) : 'ไม่มีสิทธิ';
+    }
+
+    public function isServiceOfficer(): bool
+    {
+        return $this->sciregLevel() === Privilege::LEVEL_SERVICE;
+    }
+
+    public function isDepartmentOfficer(): bool
+    {
+        return $this->sciregLevel() === Privilege::LEVEL_DEPARTMENT;
+    }
+
+    public function isFinanceOfficer(): bool
+    {
+        return $this->sciregLevel() === Privilege::LEVEL_FINANCE;
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->isServiceOfficer();
+    }
+
+    public function canAccessPayments(): bool
+    {
+        return in_array($this->sciregLevel(), [
+            Privilege::LEVEL_SERVICE,
+            Privilege::LEVEL_FINANCE,
+        ], true);
+    }
+
+    public function canAccessImport(): bool
+    {
+        return $this->isServiceOfficer();
+    }
+
+    public function canAccessSummaryReport(): bool
+    {
+        return in_array($this->sciregLevel(), [
+            Privilege::LEVEL_SERVICE,
+            Privilege::LEVEL_DEPARTMENT,
+        ], true);
+    }
+
+    public function canAccessLateExam(): bool
+    {
+        return $this->isServiceOfficer();
+    }
+
+    public function researchFeeDepartId(): ?int
+    {
+        $departmentId = (int) ($this->department_id ?? 0);
+        if ($departmentId <= 0) {
+            return null;
+        }
+
+        return self::RESEARCH_FEE_DEPARTMENT_MAP[$departmentId] ?? null;
     }
 
     public function getAuthPasswordName(): string

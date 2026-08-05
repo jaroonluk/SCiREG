@@ -181,6 +181,51 @@
             background: rgba(107, 93, 69, 0.1);
             color: var(--ink-muted);
         }
+        .badge-service {
+            background: rgba(201, 146, 26, 0.16);
+            color: #8a6510;
+        }
+        .badge-department {
+            background: rgba(37, 99, 235, 0.12);
+            color: #1d4ed8;
+        }
+        .badge-finance {
+            background: rgba(15, 118, 110, 0.12);
+            color: #0f766e;
+        }
+
+        .role-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            align-items: center;
+        }
+        .role-form select {
+            border: 1px solid var(--line);
+            background: #fff;
+            border-radius: 999px;
+            padding: 0.4rem 0.75rem;
+            font: inherit;
+            font-size: 0.86rem;
+            color: var(--ink);
+            max-width: 12.5rem;
+        }
+        .role-help {
+            margin-top: 0.85rem;
+            padding: 0.85rem 1rem;
+            border-radius: 0.9rem;
+            background: rgba(255, 252, 245, 0.9);
+            border: 1px solid var(--line);
+            color: var(--ink-muted);
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+        .role-help strong { color: var(--ink); }
+        .role-help ul {
+            margin: 0.45rem 0 0 1.1rem;
+            display: grid;
+            gap: 0.25rem;
+        }
 
         .empty {
             padding: 2.5rem 1.5rem;
@@ -230,7 +275,7 @@
         }
 
         @media (max-width: 720px) {
-            .col-email, .col-id { display: none; }
+            .col-email { display: none; }
             th, td { padding: 0.75rem 0.7rem; }
         }
 @endsection
@@ -267,11 +312,23 @@
         <div class="filters" role="tablist" aria-label="ตัวกรองสิทธิ">
             <a href="{{ route('users.permissions', array_filter(['q' => $search ?: null])) }}" class="{{ $filter === 'all' ? 'active' : '' }}">ทั้งหมด</a>
             <a href="{{ route('users.permissions', array_filter(['q' => $search ?: null, 'filter' => 'granted'])) }}" class="{{ $filter === 'granted' ? 'active' : '' }}">มีสิทธิแล้ว</a>
+            <a href="{{ route('users.permissions', array_filter(['q' => $search ?: null, 'filter' => 'service'])) }}" class="{{ $filter === 'service' ? 'active' : '' }}">งานบริการ</a>
+            <a href="{{ route('users.permissions', array_filter(['q' => $search ?: null, 'filter' => 'department'])) }}" class="{{ $filter === 'department' ? 'active' : '' }}">สาขาวิชา</a>
+            <a href="{{ route('users.permissions', array_filter(['q' => $search ?: null, 'filter' => 'finance'])) }}" class="{{ $filter === 'finance' ? 'active' : '' }}">การเงิน</a>
             <a href="{{ route('users.permissions', array_filter(['q' => $search ?: null, 'filter' => 'ungranted'])) }}" class="{{ $filter === 'ungranted' ? 'active' : '' }}">ยังไม่มีสิทธิ</a>
         </div>
 
         <div class="stats">
             ผู้มีสิทธิเข้าใช้งานขณะนี้ <strong>{{ number_format($grantedCount) }}</strong> คน
+        </div>
+
+        <div class="role-help">
+            <strong>ระดับสิทธิ 3 แบบ</strong>
+            <ul>
+                <li><strong>เจ้าหน้าที่งานบริการ</strong> — ใช้ได้ทุกเมนูในระบบ</li>
+                <li><strong>เจ้าหน้าที่สาขาวิชา</strong> — ใช้ได้เฉพาะรายงานค่าธรรมเนียมวิจัย และเห็นเฉพาะสาขาที่สังกัด</li>
+                <li><strong>เจ้าหน้าที่การเงิน</strong> — ใช้ได้เฉพาะจัดการข้อมูลชำระเงินค่าธรรมเนียมวิจัย</li>
+            </ul>
         </div>
     </div>
 
@@ -282,46 +339,61 @@
             <table>
                 <thead>
                     <tr>
-                        <th class="col-id">รหัส</th>
                         <th>บุคลากร</th>
                         <th class="col-email">อีเมล</th>
-                        <th>สถานะสิทธิ</th>
+                        <th>ระดับสิทธิ</th>
                         <th>จัดการ</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($users as $person)
-                        @php $hasAccess = $person->sciregPrivilege !== null; @endphp
+                        @php
+                            $privilege = $person->sciregPrivilege;
+                            $hasAccess = $privilege !== null;
+                            $level = $privilege?->level;
+                            $badgeClass = match ($level) {
+                                1 => 'badge-service',
+                                2 => 'badge-department',
+                                3 => 'badge-finance',
+                                default => 'badge-off',
+                            };
+                        @endphp
                         <tr>
-                            <td class="col-id">{{ $person->username }}</td>
                             <td>
                                 <div class="person">
                                     <span class="person-name">{{ $person->full_name }}</span>
-                                    <span class="person-meta">{{ $person->username }}</span>
                                 </div>
                             </td>
                             <td class="col-email">{{ $person->email ?: '—' }}</td>
                             <td>
                                 @if ($hasAccess)
-                                    <span class="badge badge-on">อนุญาตเข้าใช้งาน</span>
+                                    <span class="badge {{ $badgeClass }}">{{ $roleLabels[$level] ?? 'มีสิทธิ' }}</span>
                                 @else
                                     <span class="badge badge-off">ยังไม่มีสิทธิ</span>
                                 @endif
                             </td>
                             <td>
-                                @if ($hasAccess)
-                                    <form method="POST" action="{{ route('users.permissions.revoke') }}" onsubmit="return confirm('ถอนสิทธิของ {{ $person->full_name }} หรือไม่?')">
+                                <div class="role-form">
+                                    <form method="POST" action="{{ route('users.permissions.grant') }}" class="role-form">
                                         @csrf
                                         <input type="hidden" name="username" value="{{ $person->username }}">
-                                        <button type="submit" class="btn btn-danger btn-sm">ถอนสิทธิ</button>
+                                        <select name="level" aria-label="เลือกระดับสิทธิของ {{ $person->full_name }}">
+                                            @foreach ($roleLabels as $value => $label)
+                                                <option value="{{ $value }}" @selected($level === $value)>{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            {{ $hasAccess ? 'บันทึกสิทธิ' : 'ให้สิทธิ' }}
+                                        </button>
                                     </form>
-                                @else
-                                    <form method="POST" action="{{ route('users.permissions.grant') }}">
-                                        @csrf
-                                        <input type="hidden" name="username" value="{{ $person->username }}">
-                                        <button type="submit" class="btn btn-primary btn-sm">ให้สิทธิ</button>
-                                    </form>
-                                @endif
+                                    @if ($hasAccess)
+                                        <form method="POST" action="{{ route('users.permissions.revoke') }}" onsubmit="return confirm('ถอนสิทธิของ {{ $person->full_name }} หรือไม่?')">
+                                            @csrf
+                                            <input type="hidden" name="username" value="{{ $person->username }}">
+                                            <button type="submit" class="btn btn-danger btn-sm">ถอนสิทธิ</button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @endforeach

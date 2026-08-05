@@ -3,11 +3,16 @@
 @section('title', 'หน้าหลัก')
 
 @section('styles')
+        main.app-main {
+            max-width: min(100%, 1180px);
+            width: 100%;
+        }
+
         .welcome {
             display: flex;
             align-items: center;
             gap: 1.15rem;
-            margin-bottom: 1.65rem;
+            margin-bottom: 1.1rem;
             animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .welcome-avatar {
@@ -22,17 +27,30 @@
         .welcome-avatar.avatar-fallback { font-size: 1.35rem; }
         .welcome h1 {
             font-family: 'Outfit', 'Sarabun', sans-serif;
-            font-size: clamp(1.35rem, 3vw, 1.7rem);
+            font-size: clamp(1.35rem, 3vw, 1.75rem);
             margin-bottom: 0.25rem;
             line-height: 1.25;
         }
-        .welcome p { color: var(--ink-muted); line-height: 1.55; }
+        .welcome p { color: var(--ink-muted); line-height: 1.5; }
+        .role-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            margin-top: 0.45rem;
+            padding: 0.28rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(230, 180, 34, 0.16);
+            color: var(--champaca-deep);
+            font-size: 0.86rem;
+            font-weight: 600;
+        }
+        .role-chip svg { width: 0.95rem; height: 0.95rem; }
 
         .menu-divider {
             display: flex;
             align-items: center;
             gap: 0.85rem;
-            margin: 0 0 1.5rem;
+            margin: 0 0 1.35rem;
             animation: rise 0.55s 0.08s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         .menu-divider::before,
@@ -51,85 +69,123 @@
             flex-shrink: 0;
         }
 
-        .menu-grid {
+        .menu-zones {
             display: grid;
             gap: 1.15rem;
         }
 
-        .menu-section {
+        .menu-zone {
             background: var(--surface);
             border: 1px solid var(--line);
-            border-radius: 1.15rem;
-            padding: 1.25rem 1.25rem 0.85rem;
+            border-radius: 1.25rem;
+            padding: 1.15rem 1.15rem 1rem;
             box-shadow: 0 16px 36px -28px rgba(120, 80, 10, 0.4);
             animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
-        .menu-section:nth-child(1) { animation-delay: 0.12s; }
-        .menu-section:nth-child(2) { animation-delay: 0.2s; }
-        .menu-section:nth-child(3) { animation-delay: 0.28s; }
+        .menu-zone:nth-child(1) { animation-delay: 0.1s; }
+        .menu-zone:nth-child(2) { animation-delay: 0.16s; }
+        .menu-zone:nth-child(3) { animation-delay: 0.22s; }
 
-        .menu-section-head {
+        .zone-head {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             gap: 0.85rem;
-            margin-bottom: 0.85rem;
-            padding-bottom: 0.85rem;
-            border-bottom: 1px solid rgba(201, 146, 26, 0.16);
+            margin-bottom: 0.95rem;
+            padding-bottom: 0.9rem;
+            border-bottom: 1px solid rgba(201, 146, 26, 0.14);
         }
-        .menu-icon {
-            width: 2.6rem;
-            height: 2.6rem;
-            border-radius: 0.8rem;
+        .zone-icon {
+            width: 2.85rem;
+            height: 2.85rem;
+            border-radius: 0.9rem;
             display: grid;
             place-items: center;
+            color: #fff;
             flex-shrink: 0;
-            background: linear-gradient(145deg, rgba(230, 180, 34, 0.28), rgba(201, 146, 26, 0.18));
-            color: var(--champaca-deep);
         }
-        .menu-icon svg { width: 1.25rem; height: 1.25rem; }
-        .menu-section-head h3 {
-            font-size: 1.08rem;
+        .zone-icon svg { width: 1.35rem; height: 1.35rem; }
+        .zone-icon.fee { background: linear-gradient(145deg, #e6b422, #c9921a); }
+        .zone-icon.late { background: linear-gradient(145deg, #f59e0b, #d97706); }
+        .zone-icon.users { background: linear-gradient(145deg, #7c5cff, #5b3fd6); }
+        .zone-head h2 {
+            font-size: 1.12rem;
             font-weight: 700;
             line-height: 1.3;
         }
-        .menu-section-head p {
-            margin-top: 0.2rem;
+        .zone-head p {
+            margin-top: 0.15rem;
             color: var(--ink-muted);
             font-size: 0.9rem;
-            line-height: 1.45;
+            line-height: 1.4;
         }
 
-        .menu-links {
+        .zone-links {
             list-style: none;
             display: grid;
-            gap: 0.35rem;
-            padding-bottom: 0.35rem;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 0.55rem;
         }
-        .menu-links a {
+        .zone-links a {
             display: flex;
             align-items: center;
-            justify-content: space-between;
             gap: 0.75rem;
             text-decoration: none;
-            padding: 0.75rem 0.85rem;
-            border-radius: 0.75rem;
             color: var(--ink);
-            font-weight: 500;
-            transition: background 0.18s ease, transform 0.18s ease, color 0.18s ease;
+            background: rgba(255, 252, 245, 0.72);
+            border: 1px solid rgba(201, 146, 26, 0.14);
+            border-radius: 0.95rem;
+            padding: 0.8rem 0.9rem;
+            transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+            min-height: 4.1rem;
         }
-        .menu-links a:hover {
+        .zone-links a:hover {
+            background: rgba(230, 180, 34, 0.14);
+            border-color: rgba(201, 146, 26, 0.35);
+            transform: translateY(-1px);
+        }
+        .item-icon {
+            width: 2.35rem;
+            height: 2.35rem;
+            border-radius: 0.75rem;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
             background: rgba(230, 180, 34, 0.16);
             color: var(--champaca-deep);
-            transform: translateX(3px);
         }
-        .menu-links a span {
+        .item-icon svg { width: 1.15rem; height: 1.15rem; }
+        .item-text {
+            flex: 1;
+            min-width: 0;
+        }
+        .item-text strong {
+            display: block;
+            font-size: 0.96rem;
+            font-weight: 650;
             line-height: 1.35;
         }
-        .menu-links a svg {
+        .item-text small {
+            display: block;
+            margin-top: 0.15rem;
+            color: var(--ink-muted);
+            font-size: 0.82rem;
+            line-height: 1.35;
+        }
+        .item-arrow {
             width: 1rem;
             height: 1rem;
-            opacity: 0.55;
+            opacity: 0.45;
             flex-shrink: 0;
+            color: var(--champaca-deep);
+        }
+
+        .empty-access {
+            background: var(--surface);
+            border: 1px dashed var(--line);
+            border-radius: 1.1rem;
+            padding: 2rem 1.25rem;
+            text-align: center;
+            color: var(--ink-muted);
         }
 
         @keyframes rise {
@@ -137,35 +193,130 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        @media (min-width: 860px) {
-            .menu-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-            .menu-section:last-child {
-                grid-column: 1 / -1;
-            }
-        }
-
         @media (max-width: 640px) {
             .welcome { flex-direction: column; text-align: center; }
+            .role-chip { justify-content: center; }
+            .zone-head { align-items: flex-start; }
         }
 @endsection
 
 @section('content')
     @php
+        $user = auth()->user();
         $avatar = session('google_avatar');
-        $initial = mb_substr(auth()->user()->fname ?: auth()->user()->email ?: 'U', 0, 1);
+        $initial = mb_substr($user->fname ?: $user->email ?: 'U', 0, 1);
+
+        $zones = [];
+
+        $feeMenus = [];
+        if ($user->canAccessPayments()) {
+            $feeMenus[] = [
+                'route' => 'research-fee.payments',
+                'title' => 'จัดการข้อมูลชำระเงินค่าธรรมเนียมวิจัย',
+                'desc' => 'บันทึกสถานะ ออกเอกสาร และสรุปยอดชำระ',
+                'svg' => '<path d="M4 7h16v10H4z"/><path d="M4 10h16M8 14h3"/><circle cx="17" cy="14" r="1.2"/>',
+            ];
+        }
+        if ($user->canAccessImport()) {
+            $feeMenus[] = [
+                'route' => 'research-fee.import',
+                'title' => 'นำเข้าข้อมูลนักศึกษาจาก REG',
+                'desc' => 'ดึงรายชื่อนักศึกษาระดับบัณฑิตศึกษา',
+                'svg' => '<path d="M12 3v10"/><path d="M8.5 9.5 12 13l3.5-3.5"/><path d="M5 18h14"/>',
+            ];
+        }
+        if ($user->canAccessSummaryReport()) {
+            $feeMenus[] = [
+                'route' => 'research-fee.summary',
+                'title' => 'รายงานค่าธรรมเนียมวิจัย',
+                'desc' => $user->isDepartmentOfficer()
+                    ? 'สรุปและส่งออกเฉพาะสาขาที่สังกัด'
+                    : 'สรุปจำนวนและยอดรับชำระตามสาขาวิชา',
+                'svg' => '<path d="M4 19V5M4 19h16"/><path d="M8 16V10M12 16V7M16 16v-4"/>',
+            ];
+        }
+        if ($feeMenus !== []) {
+            $zones[] = [
+                'title' => 'จัดการค่าธรรมเนียมวิจัย',
+                'desc' => 'ชำระเงิน นำเข้าข้อมูล และรายงานสรุป',
+                'icon' => 'fee',
+                'icon_svg' => '<path d="M4 7h16M4 12h16M4 17h10"/><circle cx="18" cy="17" r="2.2"/>',
+                'menus' => $feeMenus,
+            ];
+        }
+
+        if ($user->canAccessLateExam()) {
+            $zones[] = [
+                'title' => 'รายงานเข้าสอบสายนักศึกษา',
+                'desc' => 'นำเข้า บันทึก พิมพ์ และสรุปการเข้าสอบสาย',
+                'icon' => 'late',
+                'icon_svg' => '<circle cx="12" cy="13" r="7"/><path d="M12 10v3.5l2.2 1.4M9 3.5h6"/>',
+                'menus' => [
+                    [
+                        'route' => 'late-exam.import',
+                        'title' => 'นำเข้าข้อมูลสอบสายจาก REG',
+                        'desc' => 'เตรียมรายชื่อนักศึกษาสำหรับบันทึก',
+                        'svg' => '<path d="M12 3v10"/><path d="M8.5 9.5 12 13l3.5-3.5"/><path d="M5 18h14"/>',
+                    ],
+                    [
+                        'route' => 'late-exam.record',
+                        'title' => 'บันทึกการเข้าสอบช้า',
+                        'desc' => 'บันทึกรายการนักศึกษาที่เข้าสอบช้า',
+                        'svg' => '<path d="M5 5h10v14H5z"/><path d="M9 9h2.5M9 12h4M9 15h3.5M15 8h4v11h-4"/>',
+                    ],
+                    [
+                        'route' => 'late-exam.print',
+                        'title' => 'พิมพ์แบบฟอร์มการเข้าสอบช้า',
+                        'desc' => 'จัดพิมพ์แบบฟอร์มสำหรับดำเนินการ',
+                        'svg' => '<path d="M7 8V4h10v4"/><path d="M6 8h12v4H6z"/><path d="M7 12v8h10v-8"/><path d="M9 15h6"/>',
+                    ],
+                    [
+                        'route' => 'late-exam.summary',
+                        'title' => 'รายงานสรุปการเข้าสอบสาย',
+                        'desc' => 'ดูสรุปรายงานการเข้าสอบสาย',
+                        'svg' => '<path d="M4 19V5M4 19h16"/><path d="M8 16V11M12 16V8M16 16v-3"/>',
+                    ],
+                ],
+            ];
+        }
+
+        if ($user->canManageUsers()) {
+            $zones[] = [
+                'title' => 'กำหนดสิทธิใช้งาน',
+                'desc' => 'จัดการสิทธิผู้ใช้และผู้ลงนามเอกสาร',
+                'icon' => 'users',
+                'icon_svg' => '<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.7-3 2.8-4.8 5.5-4.8S14 16 14.7 19"/><path d="M16 8h5M18.5 5.5v5"/>',
+                'menus' => [
+                    [
+                        'route' => 'users.permissions',
+                        'title' => 'กำหนดสิทธิผู้ใช้งานระบบ',
+                        'desc' => 'กำหนดสิทธิงานบริการ สาขาวิชา และการเงิน',
+                        'svg' => '<path d="M12 3l8 4.5v5.2c0 4.4-2.9 7.8-8 9.3-5.1-1.5-8-4.9-8-9.3V7.5L12 3Z"/><path d="M9.2 12.1l1.8 1.8 3.8-3.8"/>',
+                    ],
+                    [
+                        'route' => 'late-exam.signers',
+                        'title' => 'กำหนดผู้บริหารลงนามเอกสาร',
+                        'desc' => 'กำหนดผู้ปฏิบัติการแทน/รักษาการแทนคณบดี',
+                        'svg' => '<path d="M4 19l3.2-1.1L18 7.1a2.1 2.1 0 0 0-3-3L4.2 14.9 4 19z"/><path d="M13.8 5.2l3 3"/>',
+                    ],
+                ],
+            ];
+        }
     @endphp
 
     <section class="welcome">
         @if ($avatar)
-            <img class="welcome-avatar" src="{{ $avatar }}" alt="รูปโปรไฟล์ {{ auth()->user()->full_name }}" referrerpolicy="no-referrer">
+            <img class="welcome-avatar" src="{{ $avatar }}" alt="รูปโปรไฟล์ {{ $user->full_name }}" referrerpolicy="no-referrer">
         @else
             <div class="welcome-avatar avatar-fallback" aria-hidden="true">{{ $initial }}</div>
         @endif
         <div>
-            <h1>ยินดีต้อนรับ, {{ auth()->user()->full_name }}</h1>
+            <h1>ยินดีต้อนรับ, {{ $user->full_name }}</h1>
             <p>ระบบสารสนเทศสำหรับงานบริการการศึกษา คณะวิทยาศาสตร์</p>
+            <span class="role-chip">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5v5.2c0 4.4-2.9 7.8-8 9.3-5.1-1.5-8-4.9-8-9.3V7.5L12 3Z"/></svg>
+                {{ $user->sciregRoleLabel() }}
+            </span>
         </div>
     </section>
 
@@ -173,93 +324,39 @@
         <span class="menu-divider-mark"></span>
     </div>
 
-    <div class="menu-grid">
-        <section class="menu-section" aria-labelledby="menu-research-fee">
-            <div class="menu-section-head">
-                <div class="menu-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M4 7h16M4 12h16M4 17h10"/>
-                        <circle cx="18" cy="17" r="2.2"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3 id="menu-research-fee">ค่าธรรมเนียมวิจัย</h3>
-                    <p>จัดการชำระเงินและนำเข้าข้อมูลนักศึกษา</p>
-                </div>
-            </div>
-            <ul class="menu-links">
-                <li>
-                    <a href="{{ route('research-fee.payments') }}">
-                        <span>จัดการข้อมูลชำระเงินค่าธรรมเนียมวิจัย</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('research-fee.import') }}">
-                        <span>นำเข้าข้อมูลนักศึกษาจาก REG</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
-                    </a>
-                </li>
-            </ul>
-        </section>
-
-        <section class="menu-section" aria-labelledby="menu-users">
-            <div class="menu-section-head">
-                <div class="menu-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <circle cx="9" cy="8" r="3.2"/>
-                        <path d="M3.5 19c.8-3.2 3-5 5.5-5s4.7 1.8 5.5 5"/>
-                        <path d="M16 8h5M18.5 5.5v5"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3 id="menu-users">จัดการสิทธิผู้ใช้</h3>
-                    <p>กำหนดสิทธิการเข้าถึงระบบ</p>
-                </div>
-            </div>
-            <ul class="menu-links">
-                <li>
-                    <a href="{{ route('users.permissions') }}">
-                        <span>กำหนดสิทธิผู้ใช้งานระบบ</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
-                    </a>
-                </li>
-            </ul>
-        </section>
-
-        <section class="menu-section" aria-labelledby="menu-late-exam">
-            <div class="menu-section-head">
-                <div class="menu-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <circle cx="12" cy="13" r="7"/>
-                        <path d="M12 10v3.5l2.2 1.4M9 3.5h6"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3 id="menu-late-exam">รายงานการเข้าสอบสาย</h3>
-                    <p>นำเข้าข้อมูล บันทึก และพิมพ์แบบฟอร์ม</p>
-                </div>
-            </div>
-            <ul class="menu-links">
-                <li>
-                    <a href="{{ route('late-exam.import') }}">
-                        <span>นำเข้าข้อมูลนักศึกษาจาก REG</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('late-exam.record') }}">
-                        <span>บันทึกการเข้าสอบช้า</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ route('late-exam.print') }}">
-                        <span>พิมพ์แบบฟอร์มการเข้าสอบช้า</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
-                    </a>
-                </li>
-            </ul>
-        </section>
-    </div>
+    @if (count($zones) === 0)
+        <div class="empty-access">บัญชีนี้ยังไม่มีเมนูที่สามารถเข้าใช้งานได้</div>
+    @else
+        <div class="menu-zones">
+            @foreach ($zones as $zone)
+                <section class="menu-zone" aria-label="{{ $zone['title'] }}">
+                    <div class="zone-head">
+                        <div class="zone-icon {{ $zone['icon'] }}" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">{!! $zone['icon_svg'] !!}</svg>
+                        </div>
+                        <div>
+                            <h2>{{ $zone['title'] }}</h2>
+                            <p>{{ $zone['desc'] }}</p>
+                        </div>
+                    </div>
+                    <ul class="zone-links">
+                        @foreach ($zone['menus'] as $menu)
+                            <li>
+                                <a href="{{ route($menu['route']) }}">
+                                    <span class="item-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">{!! $menu['svg'] !!}</svg>
+                                    </span>
+                                    <span class="item-text">
+                                        <strong>{{ $menu['title'] }}</strong>
+                                        <small>{{ $menu['desc'] }}</small>
+                                    </span>
+                                    <svg class="item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
+            @endforeach
+        </div>
+    @endif
 @endsection

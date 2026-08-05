@@ -39,6 +39,14 @@ class UserPermissionController extends Controller
             ->when($filter === 'ungranted', function ($query) {
                 $query->whereDoesntHave('sciregPrivilege');
             })
+            ->when(in_array($filter, ['service', 'department', 'finance'], true), function ($query) use ($filter) {
+                $level = match ($filter) {
+                    'service' => Privilege::LEVEL_SERVICE,
+                    'department' => Privilege::LEVEL_DEPARTMENT,
+                    'finance' => Privilege::LEVEL_FINANCE,
+                };
+                $query->whereHas('sciregPrivilege', fn ($inner) => $inner->where('level', $level));
+            })
             ->orderBy('fname')
             ->orderBy('lname')
             ->paginate(15)
@@ -53,8 +61,7 @@ class UserPermissionController extends Controller
             'search' => $search,
             'filter' => $filter,
             'grantedCount' => $grantedCount,
-            'systemId' => Privilege::SYSTEM_SCIREG,
-            'accessLevel' => Privilege::LEVEL_ACCESS,
+            'roleLabels' => Privilege::levelLabels(),
         ]);
     }
 
@@ -78,6 +85,7 @@ class UserPermissionController extends Controller
                         ->whereRaw('LOWER(username) NOT LIKE ?', ['%webmaster%']);
                 }),
             ],
+            'level' => ['required', 'integer', Rule::in(Privilege::accessLevels())],
         ]);
 
         Privilege::query()->updateOrCreate(
@@ -86,11 +94,14 @@ class UserPermissionController extends Controller
                 'username' => $data['username'],
             ],
             [
-                'level' => Privilege::LEVEL_ACCESS,
+                'level' => (int) $data['level'],
             ]
         );
 
-        return back()->with('success', 'ให้สิทธิเข้าใช้งานระบบเรียบร้อยแล้ว');
+        return back()->with(
+            'success',
+            'บันทึกสิทธิเป็น '.Privilege::levelLabel((int) $data['level']).' เรียบร้อยแล้ว'
+        );
     }
 
     public function revoke(Request $request): RedirectResponse
