@@ -1,0 +1,108 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\EofficeUser;
+use App\Models\Privilege;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+
+class UserPermissionController extends Controller
+{
+    public function index(Request $request): View
+    {
+        $search = trim((string) $request->query('q', ''));
+        $filter = $request->query('filter', 'all');
+
+        $users = EofficeUser::query()
+            ->assignableForPermissions()
+            ->with(['academicTitle', 'sciregPrivilege'])
+            ->when($search !== '', function ($query) use ($search) {
+                $like = '%'.$search.'%';
+                $query->where(function ($inner) use ($like, $search) {
+                    $inner->where('username', 'like', $like)
+                        ->orWhere('fname', 'like', $like)
+                        ->orWhere('lname', 'like', $like)
+                        ->orWhere('email', 'like', $like)
+                        ->orWhereRaw("CONCAT(IFNULL(fname,''), ' ', IFNULL(lname,'')) LIKE ?", [$like]);
+
+                    if (ctype_digit($search)) {
+                        $inner->orWhere('username', $search);
+                    }
+                });
+            })
+            ->when($filter === 'granted', function ($query) {
+                $query->whereHas('sciregPrivilege');
+            })
+            ->when($filter === 'ungranted', function ($query) {
+                $query->whereDoesntHave('sciregPrivilege');
+            })
+            ->orderBy('fname')
+            ->orderBy('lname')
+            ->paginate(15)
+            ->withQueryString();
+
+        $grantedCount = Privilege::forScireg()
+            ->whereHas('user', fn ($query) => $query->assignableForPermissions())
+            ->count();
+
+        return view('users.permissions', [
+            'users' => $users,
+            'search' => $search,
+            'filter' => $filter,
+            'grantedCount' => $grantedCount,
+            'systemId' => Privilege::SYSTEM_SCIREG,
+            'accessLevel' => Privilege::LEVEL_ACCESS,
+        ]);
+    }
+
+    public function grant(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'username' => [
+                'required',
+                'string',
+                'max:10',
+                Rule::exists(EofficeUser::class, 'username')->where(function ($query) {
+                    $query->where(function ($inner) {
+                        $inner->whereNull('pd_level')
+                            ->orWhere('pd_level', '')
+                            ->orWhereNotIn('pd_level', [
+                                EofficeUser::PD_LEVEL_RETIRED,
+                                EofficeUser::PD_LEVEL_RESIGNED,
+                            ]);
+                    })
+                        ->whereRaw('LOWER(username) NOT LIKE ?', ['%test%'])
+                        ->whereRaw('LOWER(username) NOT LIKE ?', ['%webmaster%']);
+                }),
+            ],
+        ]);
+
+        Privilege::query()->updateOrCreate(
+            [
+                'system_id' => Privilege::SYSTEM_SCIREG,
+                'username' => $data['username'],
+            ],
+            [
+                'level' => Privilege::LEVEL_ACCESS,
+            ]
+        );
+
+        return back()->with('success', 'ให้สิทธิเข้าใช้งานระบบเรียบร้อยแล้ว');
+    }
+
+    public function revoke(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'username' => ['required', 'string', 'max:10'],
+        ]);
+
+        Privilege::forScireg()
+            ->where('username', $data['username'])
+            ->delete();
+
+        return back()->with('success', 'ถอนสิทธิเข้าใช้งานระบบเรียบร้อยแล้ว');
+    }
+}
