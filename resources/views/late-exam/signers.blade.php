@@ -30,9 +30,38 @@
     .alert-ok { background: #eefbf1; border: 1px solid #bbdfc4; color: #166534; }
     .alert-err { background: #fff1f0; border: 1px solid #f0c2be; color: #9a3412; }
 
-    .field { display: grid; gap: .35rem; margin-bottom: 1rem; }
-    .field label { font-weight: 650; color: var(--ink); }
-    .field .hint { color: var(--ink-muted); font-size: .86rem; line-height: 1.4; }
+    .steps {
+        display: grid;
+        gap: 1rem;
+    }
+    .step {
+        border: 1px solid rgba(201,146,26,.2);
+        background: rgba(255,252,245,.7);
+        border-radius: .95rem;
+        padding: 1rem;
+    }
+    .step-head {
+        display: flex;
+        align-items: center;
+        gap: .65rem;
+        margin-bottom: .75rem;
+    }
+    .step-no {
+        width: 1.7rem;
+        height: 1.7rem;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(145deg, var(--champaca), var(--champaca-deep));
+        color: #fff;
+        font-size: .85rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    .step-head strong { font-size: 1rem; }
+    .step-head small { display: block; color: var(--ink-muted); font-size: .86rem; margin-top: .1rem; }
+
+    .field { display: grid; gap: .35rem; }
     select {
         width: 100%;
         border: 1px solid var(--line);
@@ -48,34 +77,26 @@
         box-shadow: 0 0 0 3px rgba(230,180,34,.15);
     }
 
-    .active-box {
-        border: 1px solid rgba(201,146,26,.25);
-        background: rgba(230,180,34,.08);
-        border-radius: .95rem;
-        padding: 1rem;
+    .role-box {
         display: grid;
-        gap: .65rem;
-    }
-    .active-box legend {
-        font-weight: 700;
-        margin-bottom: .15rem;
+        gap: .55rem;
     }
     .radio-row {
         display: flex;
         align-items: flex-start;
         gap: .65rem;
-        padding: .55rem .65rem;
-        border-radius: .7rem;
-        background: rgba(255,252,245,.85);
-        border: 1px solid transparent;
+        padding: .7rem .75rem;
+        border-radius: .75rem;
+        background: #fff;
+        border: 1px solid var(--line);
+        cursor: pointer;
     }
     .radio-row:has(input:checked) {
-        border-color: rgba(201,146,26,.4);
-        background: #fff;
+        border-color: rgba(201,146,26,.45);
+        background: rgba(230,180,34,.1);
     }
-    .radio-row input { margin-top: .25rem; }
-    .radio-row strong { display: block; }
-    .radio-row small { color: var(--ink-muted); }
+    .radio-row input { margin-top: .2rem; }
+    .radio-row strong { display: block; line-height: 1.35; }
 
     .preview {
         margin-top: .25rem;
@@ -117,15 +138,15 @@
 
 @section('content')
     @php
-        $actingFor = $settings['acting_for_dean'];
-        $actingDean = $settings['acting_dean'];
         $active = $settings['active'];
+        $selectedUsername = old('username', $settings['username']);
+        $selectedRole = old('signing_role', $settings['signing_role']);
     @endphp
 
     <div class="page-head">
         <a class="back" href="{{ route('home') }}">← กลับเมนูหลัก</a>
         <h1>กำหนดผู้บริหารลงนามเอกสาร</h1>
-        <p>เลือกผู้บริหารจากรายชื่อในระบบ เพื่อใช้ตอนท้ายเอกสารที่ต้องลงนาม</p>
+        <p>เลือกชื่อผู้บริหารก่อน แล้วเลือกประเภทการลงนามสำหรับเอกสารที่ออกจากระบบ</p>
     </div>
 
     @if(session('success')) <div class="alert alert-ok">{{ session('success') }}</div> @endif
@@ -138,49 +159,45 @@
         @csrf
         @method('PUT')
 
-        <div class="field">
-            <label for="acting_for_dean">ปฏิบัติการแทนคณบดีคณะวิทยาศาสตร์</label>
-            <div class="hint">เลือกจากรายชื่อผู้บริหารในตาราง tbluser_ex</div>
-            <select id="acting_for_dean" name="acting_for_dean">
-                <option value="">— ยังไม่กำหนด —</option>
-                @foreach($executives as $executive)
-                    <option value="{{ $executive->username }}" @selected(old('acting_for_dean', $actingFor?->username) === $executive->username)>
-                        {{ $executive->option_label }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-head">
+                    <span class="step-no">1</span>
+                    <div>
+                        <strong>เลือกผู้บริหาร</strong>
+                        <small>รายชื่อจากตารางผู้บริหารในระบบ</small>
+                    </div>
+                </div>
+                <div class="field">
+                    <select id="username" name="username" required>
+                        <option value="">— เลือกชื่อผู้บริหาร —</option>
+                        @foreach($executives as $executive)
+                            <option value="{{ $executive->username }}" @selected($selectedUsername === $executive->username)>
+                                {{ $executive->option_label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
 
-        <div class="field">
-            <label for="acting_dean">รักษาการแทนคณบดีคณะวิทยาศาสตร์</label>
-            <div class="hint">เลือกจากรายชื่อผู้บริหารในตาราง tbluser_ex</div>
-            <select id="acting_dean" name="acting_dean">
-                <option value="">— ยังไม่กำหนด —</option>
-                @foreach($executives as $executive)
-                    <option value="{{ $executive->username }}" @selected(old('acting_dean', $actingDean?->username) === $executive->username)>
-                        {{ $executive->option_label }}
-                    </option>
-                @endforeach
-            </select>
+            <div class="step">
+                <div class="step-head">
+                    <span class="step-no">2</span>
+                    <div>
+                        <strong>เลือกประเภทการลงนาม</strong>
+                        <small>ใช้ข้อความนี้ตอนท้ายเอกสาร</small>
+                    </div>
+                </div>
+                <div class="role-box">
+                    @foreach($roleLabels as $roleKey => $roleLabel)
+                        <label class="radio-row">
+                            <input type="radio" name="signing_role" value="{{ $roleKey }}" @checked($selectedRole === $roleKey) required>
+                            <span><strong>{{ $roleLabel }}</strong></span>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
         </div>
-
-        <fieldset class="active-box">
-            <legend>ใช้ผู้ลงนามแบบใดกับเอกสาร</legend>
-            <label class="radio-row">
-                <input type="radio" name="active_role" value="acting_for_dean" @checked(old('active_role', $settings['active_role']) === 'acting_for_dean')>
-                <span>
-                    <strong>ปฏิบัติการแทนคณบดีคณะวิทยาศาสตร์</strong>
-                    <small>ใช้ผู้ที่กำหนดในช่องด้านบนสำหรับเอกสารที่ออกจากระบบ</small>
-                </span>
-            </label>
-            <label class="radio-row">
-                <input type="radio" name="active_role" value="acting_dean" @checked(old('active_role', $settings['active_role']) === 'acting_dean')>
-                <span>
-                    <strong>รักษาการแทนคณบดีคณะวิทยาศาสตร์</strong>
-                    <small>ใช้ผู้ที่กำหนดในช่องด้านบนสำหรับเอกสารที่ออกจากระบบ</small>
-                </span>
-            </label>
-        </fieldset>
 
         <div class="actions">
             <button class="btn btn-primary" type="submit">บันทึกการกำหนด</button>

@@ -31,20 +31,23 @@ class LateExamSignerController extends Controller
             ->all();
 
         $data = $request->validate([
-            'acting_for_dean' => ['nullable', 'string', 'max:100', Rule::in(array_merge([''], $usernames))],
-            'acting_dean' => ['nullable', 'string', 'max:100', Rule::in(array_merge([''], $usernames))],
-            'active_role' => ['required', 'string', Rule::in(array_keys(DocumentSigner::roleLabels()))],
+            'username' => ['required', 'string', 'max:100', Rule::in($usernames)],
+            'signing_role' => ['required', 'string', Rule::in(array_keys(DocumentSigner::roleLabels()))],
+        ], [
+            'username.required' => 'กรุณาเลือกผู้บริหาร',
+            'username.in' => 'ไม่พบผู้บริหารที่เลือก',
+            'signing_role.required' => 'กรุณาเลือกประเภทการลงนาม',
+            'signing_role.in' => 'ประเภทการลงนามไม่ถูกต้อง',
         ]);
 
         try {
             $this->signerService->save(
-                (string) ($data['acting_for_dean'] ?? ''),
-                (string) ($data['acting_dean'] ?? ''),
-                $data['active_role'],
+                $data['username'],
+                $data['signing_role'],
                 $request->user()?->username
             );
         } catch (\InvalidArgumentException $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', $e->getMessage())->withInput();
         }
 
         return back()->with('success', 'บันทึกผู้บริหารสำหรับลงนามเอกสารเรียบร้อยแล้ว');

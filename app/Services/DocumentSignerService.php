@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\DocumentSigner;
-use App\Models\ExecutiveUser;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -49,44 +48,18 @@ class DocumentSignerService
     }
 
     /**
-     * @return array{acting_for_dean:?object, acting_dean:?object, active_role:string, active:?array{role_key:string,role_label:string,username:?string,full_name:string,position:string,signature_name:string}}
+     * @return array{username:?string, signing_role:string, active:?array{role_key:string,role_label:string,username:?string,full_name:string,position:string,signature_name:string}}
      */
     public function currentSettings(): array
     {
         $this->ensureRows();
 
-        $rows = DocumentSigner::query()->get()->keyBy('role_key');
-        $executives = $this->selectableExecutives()->keyBy('username');
-
-        $build = function (?DocumentSigner $row) use ($executives): ?object {
-            if (! $row) {
-                return null;
-            }
-
-            $executive = $row->username ? $executives->get($row->username) : null;
-
-            return (object) [
-                'role_key' => $row->role_key,
-                'role_label' => $row->role_label,
-                'username' => $row->username,
-                'is_active' => (bool) $row->is_active,
-                'executive' => $executive,
-                'full_name' => $executive?->display_name,
-                'position' => $executive?->position,
-            ];
-        };
-
-        $actingForDean = $build($rows->get(DocumentSigner::ROLE_ACTING_FOR_DEAN));
-        $actingDean = $build($rows->get(DocumentSigner::ROLE_ACTING_DEAN));
-
-        $activeRole = $rows->firstWhere('is_active', true)?->role_key
-            ?? DocumentSigner::ROLE_ACTING_FOR_DEAN;
+        $active = $this->activeSigner();
 
         return [
-            'acting_for_dean' => $actingForDean,
-            'acting_dean' => $actingDean,
-            'active_role' => $activeRole,
-            'active' => $this->activeSigner(),
+            'username' => $active['username'] ?? null,
+            'signing_role' => $active['role_key'] ?? DocumentSigner::ROLE_ACTING_FOR_DEAN,
+            'active' => $active,
         ];
     }
 
@@ -99,9 +72,11 @@ class DocumentSignerService
 
         $active = DocumentSigner::query()
             ->where('is_active', true)
+            ->whereNotNull('username')
+            ->where('username', '!=', '')
             ->first();
 
-        if (! $active || ! $active->username) {
+        if (! $active) {
             $active = DocumentSigner::query()
                 ->whereNotNull('username')
                 ->where('username', '!=', '')
@@ -130,41 +105,32 @@ class DocumentSignerService
         ];
     }
 
-    public function save(string $actingForDeanUsername, string $actingDeanUsername, string $activeRole, ?string $updatedBy = null): void
+    public function save(string $username, string $signingRole, ?string $updatedBy = null): void
     {
         $this->ensureRows();
 
         $usernames = $this->selectableExecutives()->pluck('username')->all();
 
-        if ($actingForDeanUsername !== '' && ! in_array($actingForDeanUsername, $usernames, true)) {
-            throw new \InvalidArgumentException('ไม่พบผู้บริหารที่เลือกสำหรับปฏิบัติการแทนคณบดี');
+        if ($username === '' || ! in_array($username, $usernames, true)) {
+            throw new \InvalidArgumentException('กรุณาเลือกผู้บริหารที่ต้องการลงนามเอกสาร');
         }
 
-        if ($actingDeanUsername !== '' && ! in_array($actingDeanUsername, $usernames, true)) {
-            throw new \InvalidArgumentException('ไม่พบผู้บริหารที่เลือกสำหรับรักษาการแทนคณบดี');
+        if (! array_key_exists($signingRole, DocumentSigner::roleLabels())) {
+            throw new \InvalidArgumentException('ประเภทการลงนามไม่ถูกต้อง');
         }
 
-        if (! array_key_exists($activeRole, DocumentSigner::roleLabels())) {
-            throw new \InvalidArgumentException('บทบาทผู้ลงนามไม่ถูกต้อง');
+        foreach (array_keys(DocumentSigner::roleLabels()) as $roleKey) {
+            $isSelected = $roleKey === $signingRole;
+
+            DocumentSigner::query()->updateOrCreate(
+                ['role_key' => $roleKey],
+                [
+                    'username' => $isSelected ? $username : null,
+                    'is_active' => $isSelected,
+                    'updated_by' => $updatedBy,
+                ]
+            );
         }
-
-        DocumentSigner::query()->updateOrCreate(
-            ['role_key' => DocumentSigner::ROLE_ACTING_FOR_DEAN],
-            [
-                'username' => $actingForDeanUsername !== '' ? $actingForDeanUsername : null,
-                'is_active' => $activeRole === DocumentSigner::ROLE_ACTING_FOR_DEAN,
-                'updated_by' => $updatedBy,
-            ]
-        );
-
-        DocumentSigner::query()->updateOrCreate(
-            ['role_key' => DocumentSigner::ROLE_ACTING_DEAN],
-            [
-                'username' => $actingDeanUsername !== '' ? $actingDeanUsername : null,
-                'is_active' => $activeRole === DocumentSigner::ROLE_ACTING_DEAN,
-                'updated_by' => $updatedBy,
-            ]
-        );
     }
 
     private function ensureRows(): void
