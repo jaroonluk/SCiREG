@@ -21,8 +21,25 @@
             min-height: 100vh;
             font-family: 'Sarabun', sans-serif;
             color: var(--ink);
-            background: linear-gradient(165deg, #fffdf7 0%, #f6e7c4 100%);
+            background:
+                radial-gradient(ellipse 70% 50% at 8% 12%, rgba(230, 180, 34, 0.22), transparent 55%),
+                radial-gradient(ellipse 60% 45% at 92% 88%, rgba(201, 146, 26, 0.16), transparent 50%),
+                linear-gradient(165deg, #fffdf7 0%, #f6e7c4 52%, #f0db9a 100%);
         }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background-image:
+                linear-gradient(rgba(201, 146, 26, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201, 146, 26, 0.04) 1px, transparent 1px);
+            background-size: 52px 52px;
+            mask-image: radial-gradient(ellipse at center, black 25%, transparent 78%);
+        }
+        header.app-header,
+        main.app-main { position: relative; z-index: 1; }
         a { color: inherit; }
         header.app-header {
             display: flex;
@@ -118,7 +135,7 @@
         .logout {
             appearance: none;
             border: 1px solid var(--line);
-            background: #fff;
+            background: #fffef9;
             color: var(--ink);
             font: inherit;
             font-weight: 600;
@@ -126,8 +143,12 @@
             border-radius: 999px;
             cursor: pointer;
             flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
         }
-        .logout:hover { border-color: var(--champaca); }
+        .logout svg { width: 0.95rem; height: 0.95rem; }
+        .logout:hover { border-color: var(--champaca); color: var(--champaca-deep); }
         main.app-main {
             max-width: 960px;
             margin: 0 auto;
@@ -163,7 +184,13 @@
             </div>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="logout">ออกจากระบบ</button>
+                <button type="submit" class="logout">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path d="M10 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/>
+                        <path d="M14 16l4-4-4-4M10 12h8"/>
+                    </svg>
+                    ออกจากระบบ
+                </button>
             </form>
         </div>
     </header>

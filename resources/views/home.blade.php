@@ -105,8 +105,8 @@
         }
         .zone-icon svg { width: 1.35rem; height: 1.35rem; }
         .zone-icon.fee { background: linear-gradient(145deg, #e6b422, #c9921a); }
-        .zone-icon.late { background: linear-gradient(145deg, #f59e0b, #d97706); }
-        .zone-icon.users { background: linear-gradient(145deg, #7c5cff, #5b3fd6); }
+        .zone-icon.late { background: linear-gradient(145deg, #f0c94a, #c9921a); }
+        .zone-icon.users { background: linear-gradient(145deg, #f3d06a, #b8860b); }
         .zone-head h2 {
             font-size: 1.12rem;
             font-weight: 700;
@@ -247,14 +247,14 @@
 
         if ($user->canAccessLateExam()) {
             $zones[] = [
-                'title' => 'รายงานเข้าสอบสายนักศึกษา',
-                'desc' => 'นำเข้า บันทึก พิมพ์ และสรุปการเข้าสอบสาย',
+                'title' => 'รายงานเข้าสอบช้านักศึกษา',
+                'desc' => 'นำเข้า บันทึก พิมพ์ และสรุปการเข้าสอบช้า',
                 'icon' => 'late',
                 'icon_svg' => '<circle cx="12" cy="13" r="7"/><path d="M12 10v3.5l2.2 1.4M9 3.5h6"/>',
                 'menus' => [
                     [
                         'route' => 'late-exam.import',
-                        'title' => 'นำเข้าข้อมูลสอบสายจาก REG',
+                        'title' => 'นำเข้าข้อมูลสอบช้าจาก REG',
                         'desc' => 'เตรียมรายชื่อนักศึกษาสำหรับบันทึก',
                         'svg' => '<path d="M12 3v10"/><path d="M8.5 9.5 12 13l3.5-3.5"/><path d="M5 18h14"/>',
                     ],
@@ -272,9 +272,15 @@
                     ],
                     [
                         'route' => 'late-exam.summary',
-                        'title' => 'รายงานสรุปการเข้าสอบสาย',
-                        'desc' => 'ดูสรุปรายงานการเข้าสอบสาย',
+                        'title' => 'รายงานสรุปการเข้าสอบช้า',
+                        'desc' => 'ดูสรุปรายงานการเข้าสอบช้า',
                         'svg' => '<path d="M4 19V5M4 19h16"/><path d="M8 16V11M12 16V8M16 16v-3"/>',
+                    ],
+                    [
+                        'route' => 'late-exam.term-setting',
+                        'title' => 'กำหนดภาคการศึกษาปัจจุบัน',
+                        'desc' => 'ตั้งค่าปี/ภาคเริ่มต้นของเมนูสอบช้า',
+                        'svg' => '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/>',
                     ],
                 ],
             ];
@@ -283,7 +289,7 @@
         if ($user->canManageUsers()) {
             $zones[] = [
                 'title' => 'กำหนดสิทธิใช้งาน',
-                'desc' => 'จัดการสิทธิผู้ใช้และผู้ลงนามเอกสาร',
+                'desc' => 'จัดการสิทธิผู้ใช้ ผู้ลงนาม และประวัติการใช้งาน',
                 'icon' => 'users',
                 'icon_svg' => '<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.7-3 2.8-4.8 5.5-4.8S14 16 14.7 19"/><path d="M16 8h5M18.5 5.5v5"/>',
                 'menus' => [
@@ -298,6 +304,12 @@
                         'title' => 'กำหนดผู้บริหารลงนามเอกสาร',
                         'desc' => 'กำหนดผู้ปฏิบัติการแทน/รักษาการแทนคณบดี',
                         'svg' => '<path d="M4 19l3.2-1.1L18 7.1a2.1 2.1 0 0 0-3-3L4.2 14.9 4 19z"/><path d="M13.8 5.2l3 3"/>',
+                    ],
+                    [
+                        'route' => 'audit-logs.index',
+                        'title' => 'เข้าดูข้อมูล log',
+                        'desc' => 'ติดตามประวัติการใช้งานระบบ (audit log)',
+                        'svg' => '<path d="M8 4h8a2 2 0 0 1 2 2v14l-3-1.5L12 20l-3-1.5L6 20V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12h6M9 15h4"/>',
                     ],
                 ],
             ];

@@ -5,23 +5,33 @@
     <title>รายงานค่าธรรมเนียมวิจัย {{ $filters['term'] }}/{{ $filters['year'] }}</title>
     <style>
         @page { size: A4 landscape; margin: 12mm; }
-        body { font-family: Tahoma, "Sarabun", sans-serif; color:#111; font-size:12px; }
+        body { font-family: Tahoma, "Sarabun", sans-serif; color:#111; font-size:12px; background: #fffdf7; }
         .toolbar { display:flex; gap:8px; margin-bottom:14px; }
-        button { padding:8px 14px; cursor:pointer; }
+        button {
+            padding:8px 14px; cursor:pointer; border-radius: 8px; font-weight: 600;
+            border: 1px solid rgba(201,146,26,.35); background: #fffef9; color: #2a2214;
+        }
+        button.primary {
+            background: linear-gradient(145deg, #f0c94a, #c9921a);
+            border-color: transparent; color: #fffdf5;
+        }
         h1,h2 { text-align:center; margin:3px; }
-        h1 { font-size:19px; } h2 { font-size:15px; font-weight:normal; }
-        .meta { text-align:center; margin:10px 0 14px; }
+        h1 { font-size:19px; color: #8a6510; } h2 { font-size:15px; font-weight:normal; }
+        .meta { text-align:center; margin:10px 0 14px; color: #6b5d45; }
         table { width:100%; border-collapse:collapse; }
-        th,td { border:1px solid #555; padding:5px 6px; vertical-align:top; }
-        th { background:#eee; text-align:center; }
+        th,td { border:1px solid #c9a86a; padding:5px 6px; vertical-align:top; }
+        th { background:#f7e7b8; text-align:center; color: #8a6510; }
         .num { text-align:right; white-space:nowrap; }
         .summary { margin-top:14px; display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
-        .summary div { border:1px solid #aaa; padding:8px; }
-        @media print { .toolbar { display:none; } }
+        .summary div { border:1px solid #e6b422; padding:8px; border-radius:8px; background: #fff8e8; }
+        @media print { .toolbar { display:none; } body { background: #fff; } }
     </style>
 </head>
 <body>
-    <div class="toolbar"><button onclick="window.print()">พิมพ์รายงาน</button><button onclick="window.close()">ปิด</button></div>
+    <div class="toolbar">
+        <button class="primary" onclick="window.print()">พิมพ์รายงาน</button>
+        <button onclick="window.close()">ปิด</button>
+    </div>
     <h1>รายงานการชำระเงินค่าธรรมเนียมวิจัย</h1>
     <h2>สำหรับนักศึกษาระดับบัณฑิตศึกษา คณะวิทยาศาสตร์ มหาวิทยาลัยขอนแก่น</h2>
     <div class="meta">

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\EofficeUser;
+use App\Services\AuditLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -12,6 +13,10 @@ use Throwable;
 
 class GoogleAuthController extends Controller
 {
+    public function __construct(
+        private readonly AuditLogService $auditLog,
+    ) {}
+
     public function showLogin(): View|RedirectResponse
     {
         if (Auth::check()) {
@@ -73,11 +78,26 @@ class GoogleAuthController extends Controller
         request()->session()->put('google_avatar', $googleUser->getAvatar());
         request()->session()->put('google_name', $googleUser->getName());
 
+        $this->auditLog->write(
+            module: 'auth',
+            action: 'login',
+            description: 'เข้าสู่ระบบด้วย Google',
+            requestData: ['email' => $email],
+            statusCode: 302,
+        );
+
         return redirect()->intended(route('home'));
     }
 
     public function logout(): RedirectResponse
     {
+        $this->auditLog->write(
+            module: 'auth',
+            action: 'logout',
+            description: 'ออกจากระบบ',
+            statusCode: 302,
+        );
+
         Auth::logout();
 
         request()->session()->invalidate();

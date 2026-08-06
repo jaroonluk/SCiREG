@@ -9,13 +9,20 @@
         padding: 1.5rem 1.25rem 2.5rem;
     }
 
+    @keyframes rise {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes softPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(230,180,34,.28); }
+        50% { box-shadow: 0 0 0 8px rgba(230,180,34,0); }
+    }
+
     .page-head {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 1rem;
-        flex-wrap: wrap;
+        display: grid;
+        gap: .45rem;
         margin-bottom: 1.25rem;
+        animation: rise .45s ease both;
     }
     .back {
         display: inline-flex;
@@ -24,23 +31,27 @@
         color: var(--ink-muted);
         text-decoration: none;
         font-size: .92rem;
+        width: fit-content;
     }
     .back:hover { color: var(--champaca-deep); }
+    .back svg { width: 1rem; height: 1rem; }
     .page-title {
         display: flex;
         align-items: center;
         gap: .85rem;
-        margin-top: .55rem;
+        flex-wrap: wrap;
     }
     .page-title-icon {
         width: 3rem;
         height: 3rem;
-        border-radius: .9rem;
+        border-radius: 1rem;
         display: grid;
         place-items: center;
-        background: linear-gradient(145deg, rgba(230,180,34,.32), rgba(201,146,26,.18));
-        color: var(--champaca-deep);
+        background: linear-gradient(145deg, #f3d06a, var(--champaca-deep));
+        color: #fffdf5;
         flex-shrink: 0;
+        box-shadow: 0 12px 24px -14px rgba(150,100,10,.55);
+        animation: softPulse 2.8s ease-in-out infinite;
     }
     .page-title-icon svg { width: 1.45rem; height: 1.45rem; }
     .page-title h1 {
@@ -52,15 +63,25 @@
         color: var(--ink-muted);
         font-size: .95rem;
         line-height: 1.45;
+        max-width: 42rem;
     }
 
     .panel {
-        background: var(--surface);
+        position: relative;
+        background: linear-gradient(180deg, rgba(255,253,247,.98), rgba(255,250,236,.94));
         border: 1px solid var(--line);
-        border-radius: 1.15rem;
-        box-shadow: 0 16px 36px -28px rgba(120,80,10,.4);
+        border-radius: 1.2rem;
+        box-shadow: 0 18px 40px -30px rgba(120,80,10,.5);
+        overflow: hidden;
+        animation: rise .5s ease both;
     }
-    .filter-panel { padding: 1.15rem 1.2rem; margin-bottom: 1rem; }
+    .panel::before {
+        content: '';
+        position: absolute; inset: 0 auto 0 0; width: 4px;
+        background: linear-gradient(180deg, var(--champaca), var(--champaca-deep));
+        border-radius: 1.2rem 0 0 1.2rem;
+    }
+    .filter-panel { padding: 1.2rem 1.25rem 1.3rem; margin-bottom: 1rem; }
     .filters {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
@@ -76,12 +97,12 @@
         font-size: .82rem;
         font-weight: 600;
     }
-    .field label svg { width: .95rem; height: .95rem; }
-    select {
+    .field label svg { width: .95rem; height: .95rem; color: var(--champaca-deep); }
+    select, .field select {
         width: 100%;
-        border: 1px solid var(--line);
-        background: #fff;
-        border-radius: .7rem;
+        border: 1px solid rgba(201,146,26,.28);
+        background: #fffef9;
+        border-radius: .8rem;
         padding: .62rem .75rem;
         font: inherit;
         color: var(--ink);
@@ -97,11 +118,11 @@
         gap: .5rem;
     }
     .btn {
-        border: 1px solid var(--line);
-        background: #fff;
+        border: 1px solid rgba(201,146,26,.28);
+        background: #fffef9;
         color: var(--ink);
         padding: .62rem 1rem;
-        border-radius: 999px;
+        border-radius: .85rem;
         font: 600 .9rem inherit;
         text-decoration: none;
         cursor: pointer;
@@ -113,9 +134,10 @@
     }
     .btn svg { width: 1rem; height: 1rem; }
     .btn-primary {
-        background: linear-gradient(145deg, var(--champaca), var(--champaca-deep));
+        background: linear-gradient(145deg, #f0c94a, var(--champaca-deep));
         border-color: transparent;
-        color: #fff;
+        color: #fffdf5;
+        box-shadow: 0 10px 22px -14px rgba(150,100,10,.65);
     }
     .btn-excel {
         background: linear-gradient(145deg, #2f9e5d, #1f7a46);
@@ -123,22 +145,32 @@
         color: #fff;
     }
     .btn:hover { border-color: var(--champaca); transform: translateY(-1px); }
+    .btn-primary:hover, .btn-excel:hover { color: #fff; }
 
     .summary {
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: .65rem;
         margin-bottom: 1rem;
+        animation: rise .5s .05s ease both;
     }
     .stat {
-        background: rgba(255,252,245,.92);
-        border: 1px solid var(--line);
-        border-radius: .95rem;
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(160deg, #fffef8, #fff6d8);
+        border: 1px solid rgba(201,146,26,.28);
+        border-radius: 1rem;
         padding: .85rem 1rem;
         display: flex;
         align-items: center;
         gap: .75rem;
         min-width: 0;
+    }
+    .stat::after {
+        content: '';
+        position: absolute; right: -10px; top: -14px;
+        width: 56px; height: 56px; border-radius: 50%;
+        background: rgba(230,180,34,.12);
     }
     .stat-icon {
         width: 2.35rem;
@@ -149,19 +181,21 @@
         flex-shrink: 0;
         background: rgba(230,180,34,.16);
         color: var(--champaca-deep);
+        border: 1px solid rgba(201,146,26,.28);
+        z-index: 1;
     }
     .stat-icon svg { width: 1.15rem; height: 1.15rem; }
-    .stat small { display: block; color: var(--ink-muted); font-size: .8rem; }
+    .stat small { display: block; color: var(--ink-muted); font-size: .8rem; font-weight: 600; }
     .stat strong {
         font: 700 1.25rem 'Outfit', 'Sarabun', sans-serif;
         color: var(--champaca-deep);
         word-break: break-word;
     }
-    .stat.paid .stat-icon { background: rgba(34,197,94,.14); color: #166534; }
+    .stat.paid .stat-icon { background: rgba(34,197,94,.14); color: #166534; border-color: rgba(34,197,94,.22); }
     .stat.paid strong { color: #166534; }
-    .stat.exempt .stat-icon { background: rgba(100,116,139,.14); color: #475569; }
+    .stat.exempt .stat-icon { background: rgba(100,116,139,.14); color: #475569; border-color: rgba(100,116,139,.22); }
     .stat.exempt strong { color: #475569; }
-    .stat.pending .stat-icon { background: rgba(234,88,12,.14); color: #9a3412; }
+    .stat.pending .stat-icon { background: rgba(234,88,12,.14); color: #9a3412; border-color: rgba(234,88,12,.22); }
     .stat.pending strong { color: #9a3412; }
 
     .report-meta {
@@ -182,7 +216,7 @@
     .report-meta h2 svg { width: 1.15rem; height: 1.15rem; color: var(--champaca-deep); }
     .report-meta p { color: var(--ink-muted); font-size: .9rem; }
 
-    .table-wrap { overflow: hidden; }
+    .table-wrap { overflow: hidden; animation-delay: .1s; }
     table {
         width: 100%;
         border-collapse: collapse;
@@ -196,7 +230,7 @@
     }
     thead th {
         background: rgba(230,180,34,.12);
-        color: var(--ink-muted);
+        color: var(--champaca-deep);
         font-size: .8rem;
         font-weight: 700;
         text-align: center;
@@ -259,22 +293,20 @@
 
 @section('content')
     <div class="page-head">
-        <div>
-            <a class="back" href="{{ route('home') }}">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>
-                กลับเมนูหลัก
-            </a>
-            <div class="page-title">
-                <div class="page-title-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path d="M4 19V5M4 19h16"/>
-                        <path d="M8 16V10M12 16V7M16 16v-4"/>
-                    </svg>
-                </div>
-                <div>
-                    <h1>รายงานค่าธรรมเนียมวิจัย</h1>
-                    <p>สรุปจำนวนนักศึกษาและการรับชำระ แยกตามสาขาวิชาและรหัสประจำตัว</p>
-                </div>
+        <a class="back" href="{{ route('home') }}">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7"/></svg>
+            กลับหน้าหลัก
+        </a>
+        <div class="page-title">
+            <div class="page-title-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M4 19V5M4 19h16"/>
+                    <path d="M8 16V10M12 16V7M16 16v-4"/>
+                </svg>
+            </div>
+            <div>
+                <h1>รายงานค่าธรรมเนียมวิจัย</h1>
+                <p>สรุปจำนวนนักศึกษาและการรับชำระ แยกตามสาขาวิชาและรหัสประจำตัว</p>
             </div>
         </div>
     </div>

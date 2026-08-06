@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'scireg.role' => \App\Http\Middleware\EnsureSciregRole::class,
+            'scireg.audit' => \App\Http\Middleware\LogSciregAudit::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

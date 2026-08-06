@@ -1,13 +1,15 @@
 <?php
 
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\LateExamController;
 use App\Http\Controllers\LateExamSignerController;
+use App\Http\Controllers\LateExamTermSettingController;
 use App\Http\Controllers\ResearchFeeImportController;
 use App\Http\Controllers\ResearchFeePaymentController;
 use App\Http\Controllers\ResearchFeeSummaryReportController;
 use App\Http\Controllers\UserPermissionController;
 use App\Models\Privilege;
-use App\Services\DocumentSignerService;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -22,7 +24,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 });
 
-Route::middleware(['auth', 'scireg.role'])->group(function () {
+Route::middleware(['auth', 'scireg.role', 'scireg.audit'])->group(function () {
     Route::get('/home', fn () => view('home'))->name('home');
     Route::post('/logout', [GoogleAuthController::class, 'logout'])->name('logout');
 
@@ -47,31 +49,35 @@ Route::middleware(['auth', 'scireg.role'])->group(function () {
         Route::post('/users/permissions/grant', [UserPermissionController::class, 'grant'])->name('users.permissions.grant');
         Route::post('/users/permissions/revoke', [UserPermissionController::class, 'revoke'])->name('users.permissions.revoke');
 
-        Route::get('/late-exam/import', fn () => view('modules.placeholder', [
-            'title' => 'นำเข้าข้อมูลสอบสายจาก REG',
-            'description' => 'เมนูย่อยภายใต้รายงานเข้าสอบสายนักศึกษา',
-        ]))->name('late-exam.import');
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 
-        Route::get('/late-exam/record', fn () => view('modules.placeholder', [
-            'title' => 'บันทึกการเข้าสอบช้า',
-            'description' => 'เมนูย่อยภายใต้รายงานเข้าสอบสายนักศึกษา',
-        ]))->name('late-exam.record');
+        Route::get('/late-exam/import', [LateExamController::class, 'importIndex'])->name('late-exam.import');
+        Route::post('/late-exam/import', [LateExamController::class, 'importStore'])->name('late-exam.import.store');
 
-        Route::get('/late-exam/print', function (DocumentSignerService $signers) {
-            return view('late-exam.print', [
-                'signer' => $signers->activeSigner(),
-            ]);
-        })->name('late-exam.print');
+        Route::get('/late-exam/record', [LateExamController::class, 'recordIndex'])->name('late-exam.record');
+        Route::get('/late-exam/record/lookup', [LateExamController::class, 'lookup'])->name('late-exam.record.lookup');
+        Route::get('/late-exam/record/courses', [LateExamController::class, 'lookupCourse'])->name('late-exam.record.courses');
+        Route::get('/late-exam/record/departments', [LateExamController::class, 'lookupDepartment'])->name('late-exam.record.departments');
+        Route::post('/late-exam/record', [LateExamController::class, 'recordStore'])->name('late-exam.record.store');
+
+        Route::get('/late-exam/print', [LateExamController::class, 'printIndex'])->name('late-exam.print');
+        Route::get('/late-exam/print/{id}', [LateExamController::class, 'printShow'])
+            ->whereNumber('id')
+            ->name('late-exam.print.show');
 
         Route::get('/late-exam/signers', [LateExamSignerController::class, 'index'])
             ->name('late-exam.signers');
         Route::put('/late-exam/signers', [LateExamSignerController::class, 'update'])
             ->name('late-exam.signers.update');
 
-        Route::get('/late-exam/summary', fn () => view('modules.placeholder', [
-            'title' => 'รายงานสรุปการเข้าสอบสาย',
-            'description' => 'เมนูย่อยภายใต้รายงานเข้าสอบสายนักศึกษา',
-        ]))->name('late-exam.summary');
+        Route::get('/late-exam/summary', [LateExamController::class, 'summaryIndex'])->name('late-exam.summary');
+        Route::get('/late-exam/summary/export', [LateExamController::class, 'summaryExport'])
+            ->name('late-exam.summary.export');
+
+        Route::get('/late-exam/term-setting', [LateExamTermSettingController::class, 'index'])
+            ->name('late-exam.term-setting');
+        Route::put('/late-exam/term-setting', [LateExamTermSettingController::class, 'update'])
+            ->name('late-exam.term-setting.update');
     });
 
     Route::middleware('scireg.role:'.Privilege::LEVEL_SERVICE.','.Privilege::LEVEL_DEPARTMENT)->group(function () {

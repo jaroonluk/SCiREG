@@ -52,15 +52,26 @@ class UserPermissionController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $grantedCount = Privilege::forScireg()
-            ->whereHas('user', fn ($query) => $query->assignableForPermissions())
-            ->count();
+        $privilegeBase = Privilege::forScireg()
+            ->whereHas('user', fn ($query) => $query->assignableForPermissions());
+
+        $grantedCount = (clone $privilegeBase)->count();
+
+        $levelCounts = (clone $privilegeBase)
+            ->selectRaw('level, COUNT(*) as total')
+            ->groupBy('level')
+            ->pluck('total', 'level');
 
         return view('users.permissions', [
             'users' => $users,
             'search' => $search,
             'filter' => $filter,
             'grantedCount' => $grantedCount,
+            'levelCounts' => [
+                Privilege::LEVEL_SERVICE => (int) ($levelCounts[Privilege::LEVEL_SERVICE] ?? 0),
+                Privilege::LEVEL_DEPARTMENT => (int) ($levelCounts[Privilege::LEVEL_DEPARTMENT] ?? 0),
+                Privilege::LEVEL_FINANCE => (int) ($levelCounts[Privilege::LEVEL_FINANCE] ?? 0),
+            ],
             'roleLabels' => Privilege::levelLabels(),
         ]);
     }
