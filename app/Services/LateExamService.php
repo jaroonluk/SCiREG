@@ -505,6 +505,16 @@ class LateExamService
         return $query->limit(500)->get();
     }
 
+    public function deleteRecord(int $id): FormLate
+    {
+        $form = FormLate::query()->find($id);
+        abort_if($form === null, 404);
+
+        $form->delete();
+
+        return $form;
+    }
+
     /**
      * @param  array<int, int>  $terms
      * @param  array<int, string>  $examTypes

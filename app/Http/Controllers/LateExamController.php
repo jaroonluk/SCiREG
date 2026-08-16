@@ -222,6 +222,27 @@ class LateExamController extends Controller
         ]);
     }
 
+    public function printDestroy(Request $request, int $id): RedirectResponse
+    {
+        $this->lateExam->deleteRecord($id);
+
+        $defaults = $this->termSetting->current();
+        $year = $request->filled('year') ? (int) $request->input('year') : $defaults['year'];
+        $term = $request->filled('term') ? (int) $request->input('term') : $defaults['term'];
+        $examType = strtoupper((string) $request->input('exam_type', $defaults['exam_type']));
+        if (! in_array($examType, ['M', 'F'], true)) {
+            $examType = $defaults['exam_type'];
+        }
+
+        return redirect()
+            ->route('late-exam.print', [
+                'year' => $year,
+                'term' => $term,
+                'exam_type' => $examType,
+            ])
+            ->with('success', 'ลบรายการผู้เข้าสอบช้าเรียบร้อยแล้ว');
+    }
+
     public function summaryIndex(Request $request): View
     {
         [$year, $terms, $examTypes, $yearListMax] = $this->summaryFilters($request);

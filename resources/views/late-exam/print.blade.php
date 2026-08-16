@@ -135,6 +135,19 @@
     }
     .btn-primary:hover { filter: brightness(1.03); }
     .btn-sm { padding: .45rem .9rem; font-size: .85rem; }
+    .btn-danger {
+        background: #fff;
+        border-color: rgba(154,52,18,.25);
+        color: #9a3412;
+    }
+    .btn-danger:hover { background: #fff1e8; border-color: rgba(154,52,18,.4); }
+    .row-actions {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        flex-wrap: wrap;
+    }
+    .row-actions form { margin: 0; }
 
     .alert {
         margin-bottom: 1rem; padding: .85rem 1rem; border-radius: .9rem;
@@ -423,11 +436,24 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <a class="btn btn-sm btn-primary" target="_blank"
-                                       href="{{ route('late-exam.print.show', $row->formID) }}">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M7 8V4h10v4"/><path d="M6 8h12v4H6z"/><path d="M7 12v8h10v-8"/><path d="M9 15h6"/></svg>
-                                        พิมพ์
-                                    </a>
+                                    <div class="row-actions">
+                                        <a class="btn btn-sm btn-primary" target="_blank"
+                                           href="{{ route('late-exam.print.show', $row->formID) }}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M7 8V4h10v4"/><path d="M6 8h12v4H6z"/><path d="M7 12v8h10v-8"/><path d="M9 15h6"/></svg>
+                                            พิมพ์
+                                        </a>
+                                        <form method="POST" action="{{ route('late-exam.print.destroy', $row->formID) }}"
+                                              onsubmit="return confirm(@json('ลบรายการของ '.$row->STUDENTCODE.' '.$row->STUDENT_NAME.' หรือไม่?'))">
+                                            @csrf
+                                            <input type="hidden" name="year" value="{{ $year }}">
+                                            <input type="hidden" name="term" value="{{ $term }}">
+                                            <input type="hidden" name="exam_type" value="{{ $examType }}">
+                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 7h16"/><path d="M9 7V5h6v2"/><path d="M7 7v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7"/><path d="M10 11v6M14 11v6"/></svg>
+                                                ลบ
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

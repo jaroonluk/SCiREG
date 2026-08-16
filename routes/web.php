@@ -64,6 +64,9 @@ Route::middleware(['auth', 'scireg.role', 'scireg.audit'])->group(function () {
         Route::get('/late-exam/print/{id}', [LateExamController::class, 'printShow'])
             ->whereNumber('id')
             ->name('late-exam.print.show');
+        Route::post('/late-exam/print/{id}/delete', [LateExamController::class, 'printDestroy'])
+            ->whereNumber('id')
+            ->name('late-exam.print.destroy');
 
         Route::get('/late-exam/signers', [LateExamSignerController::class, 'index'])
             ->name('late-exam.signers');

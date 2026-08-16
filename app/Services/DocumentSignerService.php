@@ -22,6 +22,8 @@ class DocumentSignerService
                     ->orWhere('u.pd_level', '')
                     ->orWhereNotIn('u.pd_level', ['4', '5']);
             })
+            ->whereNotIn('ue.username', ['114650', '121285'])
+            ->whereRaw('LOWER(ue.username) NOT LIKE ?', ['%test%'])
             ->orderBy('ue.position')
             ->orderBy('u.fname')
             ->orderBy('u.lname')

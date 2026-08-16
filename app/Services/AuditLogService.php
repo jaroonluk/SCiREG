@@ -85,6 +85,7 @@ class AuditLogService
             'late-exam.import.store' => ['late_exam', 'import.store', 'นำเข้าข้อมูลนักศึกษาสอบช้าจาก REG'],
             'late-exam.record.store' => ['late_exam', 'record.store', 'บันทึกการเข้าสอบช้า'],
             'late-exam.print.show' => ['late_exam', 'print.show', 'พิมพ์แบบฟอร์มการเข้าสอบช้า'],
+            'late-exam.print.destroy' => ['late_exam', 'print.destroy', 'ลบรายการผู้เข้าสอบช้า'],
             'late-exam.signers.update' => ['late_exam', 'signers.update', 'กำหนดผู้บริหารลงนามเอกสาร'],
             'late-exam.summary' => ['late_exam', 'summary.view', 'ดูรายงานสรุปการเข้าสอบช้า'],
             'late-exam.summary.export' => ['late_exam', 'summary.export', 'ส่งออก Excel รายงานเข้าสอบช้า'],
