@@ -357,17 +357,17 @@
                     <p class="hint" id="roomHint">พิมพ์บางส่วนเพื่อเลือกห้องจากรายการ หากไม่มีในรายการพิมพ์ห้องเองได้</p>
                 </div>
                 <div class="field">
-                    <label for="SEMESTER">ภาคการศึกษา</label>
-                    <select name="SEMESTER" id="SEMESTER" required>
-                        <option value="1" @selected((int)old('SEMESTER', $defaultTerm) === 1)>ภาคต้น</option>
-                        <option value="2" @selected((int)old('SEMESTER', $defaultTerm) === 2)>ภาคปลาย</option>
-                    </select>
-                </div>
-                <div class="field">
                     <label for="EXAM_TYPE">ช่วงสอบ</label>
                     <select name="EXAM_TYPE" id="EXAM_TYPE" required>
                         <option value="M" @selected(old('EXAM_TYPE', $defaultExamType ?? 'F') === 'M')>กลางภาค (M)</option>
                         <option value="F" @selected(old('EXAM_TYPE', $defaultExamType ?? 'F') === 'F')>ปลายภาค (F)</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="SEMESTER">ภาคการศึกษา</label>
+                    <select name="SEMESTER" id="SEMESTER" required>
+                        <option value="1" @selected((int)old('SEMESTER', $defaultTerm) === 1)>ภาคต้น</option>
+                        <option value="2" @selected((int)old('SEMESTER', $defaultTerm) === 2)>ภาคปลาย</option>
                     </select>
                 </div>
                 <div class="field">
