@@ -342,7 +342,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
                         รหัสวิชา
                     </label>
-                    <input type="text" name="COURSE_CODE" id="COURSE_CODE" value="{{ old('COURSE_CODE') }}" required maxlength="20" placeholder="พิมพ์รหัสบางส่วน เช่น 317" autocomplete="off">
+                    <input type="text" name="COURSE_CODE" id="COURSE_CODE" value="{{ old('COURSE_CODE') }}" required maxlength="20" placeholder="พิมพ์รหัสบางส่วน เช่น SC00" autocomplete="off">
                     <div class="suggest-list" id="courseSuggestList" role="listbox" hidden></div>
                     <p class="hint" id="courseHint">พิมพ์อย่างน้อย 2 ตัวอักษรเพื่อเลือกรายวิชาจากระบบ หากไม่พบสามารถพิมพ์รหัสและชื่อวิชาเองได้</p>
                 </div>
@@ -350,9 +350,11 @@
                     <label for="COURSE_NAME">ชื่อวิชา</label>
                     <input type="text" name="COURSE_NAME" id="COURSE_NAME" value="{{ old('COURSE_NAME') }}" maxlength="255" placeholder="ชื่อรายวิชา (เลือกจากรายการหรือพิมพ์เอง)">
                 </div>
-                <div class="field">
+                <div class="field suggest-wrap" id="roomSuggestWrap">
                     <label for="ROOM_NAME">ห้องสอบ</label>
-                    <input type="text" name="ROOM_NAME" id="ROOM_NAME" value="{{ old('ROOM_NAME') }}" maxlength="100" placeholder="เช่น SC 101">
+                    <input type="text" name="ROOM_NAME" id="ROOM_NAME" value="{{ old('ROOM_NAME') }}" maxlength="100" placeholder="พิมพ์บางส่วน เช่น 8103" autocomplete="off">
+                    <div class="suggest-list" id="roomSuggestList" role="listbox" hidden></div>
+                    <p class="hint" id="roomHint">พิมพ์บางส่วนเพื่อเลือกห้องจากรายการ หากไม่มีในรายการพิมพ์ห้องเองได้</p>
                 </div>
                 <div class="field">
                     <label for="SEMESTER">ภาคการศึกษา</label>
@@ -437,7 +439,7 @@
             .replace(/"/g, '&quot;');
     }
 
-    function bindSuggest({ input, list, hint, defaultHint, fetchUrl, minLen, extractItems, mapItems, onPick, emptyMessage, onEmpty }) {
+    function bindSuggest({ input, list, hint, defaultHint, fetchUrl, minLen, extractItems, mapItems, onPick, emptyMessage, onEmpty, localFilter }) {
         let items = [];
         let active = -1;
         let timer = null;
@@ -479,6 +481,20 @@
             if (term.length < minLen) {
                 closeList();
                 if (hint) hint.textContent = defaultHint;
+                return;
+            }
+
+            if (typeof localFilter === 'function') {
+                items = localFilter(term);
+                active = items.length ? 0 : -1;
+                if (!items.length) {
+                    closeList();
+                    if (hint) hint.textContent = emptyMessage;
+                    if (typeof onEmpty === 'function') onEmpty();
+                    return;
+                }
+                if (hint) hint.textContent = 'พบ ' + items.length + ' รายการ เลือกจากรายการด้านล่าง';
+                render();
                 return;
             }
 
@@ -552,6 +568,8 @@
     const studentDefaultHint = 'พิมพ์อย่างน้อย 2 ตัวอักษร ระบบจะแสดงรายการให้เลือกอัตโนมัติ หากไม่พบสามารถกรอกข้อมูลในส่วนที่ 2 ได้เอง';
     const courseDefaultHint = 'พิมพ์อย่างน้อย 2 ตัวอักษรเพื่อเลือกรายวิชาจากระบบ หากไม่พบสามารถพิมพ์รหัสและชื่อวิชาเองได้';
     const deptDefaultHint = 'พิมพ์ชื่อสาขาบางส่วน หรือคลิกช่องเพื่อเลือกรายการ (เฉพาะชื่อขึ้นต้นด้วย สาขาวิชา) หากไม่พบพิมพ์เองได้';
+    const roomDefaultHint = 'พิมพ์บางส่วนเพื่อเลือกห้องจากรายการ หากไม่มีในรายการพิมพ์ห้องเองได้';
+    const examRooms = ['8103', '8104', '8105', '8304', '8305', '8312', '8404', '8405', '8412', '8504', '8505', '8512', '8601'];
 
     const studentSuggest = bindSuggest({
         input: document.getElementById('lookup_q'),
@@ -617,6 +635,26 @@
         },
     });
 
+    const roomSuggest = bindSuggest({
+        input: document.getElementById('ROOM_NAME'),
+        list: document.getElementById('roomSuggestList'),
+        hint: document.getElementById('roomHint'),
+        defaultHint: roomDefaultHint,
+        minLen: 0,
+        emptyMessage: 'ไม่พบห้องในรายการ — พิมพ์ห้องสอบเองได้',
+        localFilter: (term) => {
+            const needle = term.toLowerCase();
+            return examRooms
+                .filter((room) => needle === '' || room.toLowerCase().includes(needle))
+                .map((room) => ({ code: room }));
+        },
+        mapItems: (r) => '<span class="code">' + escapeHtml(r.code || '') + '</span>',
+        onPick: (r) => {
+            document.getElementById('ROOM_NAME').value = r.code || '';
+            document.getElementById('roomHint').textContent = 'เลือกแล้วจากรายการห้องสอบ — แก้ไขหรือพิมพ์เองได้หากต้องการ';
+        },
+    });
+
     document.addEventListener('click', (e) => {
         if (!e.target.closest('#lookup_q') && !e.target.closest('#suggestList')) {
             studentSuggest.closeList();
@@ -626,6 +664,9 @@
         }
         if (!e.target.closest('#DEPARTMENT_NAME') && !e.target.closest('#deptSuggestList')) {
             deptSuggest.closeList();
+        }
+        if (!e.target.closest('#ROOM_NAME') && !e.target.closest('#roomSuggestList')) {
+            roomSuggest.closeList();
         }
     });
 
@@ -637,9 +678,11 @@
             studentSuggest.resetHint();
             courseSuggest.resetHint();
             deptSuggest.resetHint();
+            roomSuggest.resetHint();
             studentSuggest.closeList();
             courseSuggest.closeList();
             deptSuggest.closeList();
+            roomSuggest.closeList();
         }, 0);
     });
 })();
