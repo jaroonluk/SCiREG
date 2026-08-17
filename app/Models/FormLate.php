@@ -29,6 +29,7 @@ class FormLate extends Model
         'COURSE_NAME',
         'ROOMID',
         'ROOM_NAME',
+        'SEAT_NO',
         'SEMESTER',
         'EXAM_TYPE',
         'ACADYEAR',

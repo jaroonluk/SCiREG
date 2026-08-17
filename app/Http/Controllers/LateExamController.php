@@ -135,6 +135,7 @@ class LateExamController extends Controller
             'COURSE_CODE' => ['required', 'string', 'max:20'],
             'COURSE_NAME' => ['nullable', 'string', 'max:255'],
             'ROOM_NAME' => ['nullable', 'string', 'max:100'],
+            'SEAT_NO' => ['nullable', 'string', 'max:20'],
             'SEMESTER' => ['required', 'integer', 'in:1,2'],
             'EXAM_TYPE' => ['required', 'string', 'in:M,F'],
             'ACADYEAR' => ['required', 'integer', 'min:2555', 'max:2600'],

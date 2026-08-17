@@ -357,6 +357,10 @@
                     <p class="hint" id="roomHint">พิมพ์บางส่วนเพื่อเลือกห้องจากรายการ หากไม่มีในรายการพิมพ์ห้องเองได้</p>
                 </div>
                 <div class="field">
+                    <label for="SEAT_NO">เลขที่นั่งสอบ</label>
+                    <input type="text" name="SEAT_NO" id="SEAT_NO" value="{{ old('SEAT_NO') }}" maxlength="20" placeholder="เช่น 15 (ถ้าไม่มีเว้นว่างได้)">
+                </div>
+                <div class="field">
                     <label for="EXAM_TYPE">ช่วงสอบ</label>
                     <select name="EXAM_TYPE" id="EXAM_TYPE" required>
                         <option value="M" @selected(old('EXAM_TYPE', $defaultExamType ?? 'F') === 'M')>กลางภาค (M)</option>

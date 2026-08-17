@@ -343,6 +343,7 @@ class LateExamService
             'COURSE_NAME' => $data['COURSE_NAME'] ?? null,
             'ROOMID' => $data['ROOMID'] ?? 0,
             'ROOM_NAME' => $data['ROOM_NAME'] ?? null,
+            'SEAT_NO' => filled($data['SEAT_NO'] ?? null) ? trim((string) $data['SEAT_NO']) : null,
             'SEMESTER' => $data['SEMESTER'] ?? null,
             'EXAM_TYPE' => $data['EXAM_TYPE'] ?? null,
             'ACADYEAR' => $data['ACADYEAR'] ?? null,

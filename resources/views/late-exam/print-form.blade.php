@@ -82,6 +82,7 @@
             $sem2 = (int) $row->SEMESTER === 2;
             $reasonText = trim(($row->REASON_NAME ?? '').' '.($row->DESCI ?? ''));
             $yearBe = $row->ACADYEAR ?: ((int) $when->format('Y') + 543);
+            $seatNo = trim((string) ($row->SEAT_NO ?? ''));
         @endphp
         <article class="sheet">
             <div class="title">การเข้าสอบช้า (เกิน 15 นาที แต่ไม่เกิน 30 นาที)</div>
@@ -102,7 +103,7 @@
             </div>
             <div class="right">
                 เวลา {{ $when->format('H:i') }}
-                &nbsp;&nbsp;เลขที่นั่งสอบ............
+                &nbsp;&nbsp;เลขที่นั่งสอบ{{ $seatNo !== '' ? ' '.$seatNo : '............' }}
             </div>
 
             <div class="line" style="margin-top:1rem">
