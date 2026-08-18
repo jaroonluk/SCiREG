@@ -133,90 +133,86 @@ class LateExamService
         }
 
         $limit = max(1, min(30, $limit));
-        $seen = [];
-        $results = [];
+        /** @var array<string, array<string, mixed>> */
+        $byCode = [];
 
-        $push = function (array $row) use (&$seen, &$results, $limit): void {
-            if (count($results) >= $limit) {
-                return;
-            }
+        $remember = function (array $row, bool $prefer = false) use (&$byCode): void {
             $code = (string) ($row['STUDENTCODE'] ?? '');
             $key = str_replace(['-', ' '], '', $code);
-            if ($key === '' || isset($seen[$key])) {
+            if ($key === '') {
                 return;
             }
-            $seen[$key] = true;
-            $results[] = $row;
+            if (! isset($byCode[$key]) || $prefer) {
+                $byCode[$key] = $row;
+            }
         };
 
-        $cached = LateRegStudent::query()
-            ->where(function ($q) use ($raw, $needle) {
-                $q->where('STUDENTCODE', 'like', $raw.'%')
-                    ->orWhere('STUDENTCODE', 'like', '%'.$raw.'%')
-                    ->orWhereRaw("REPLACE(REPLACE(STUDENTCODE, '-', ''), ' ', '') LIKE ?", [$needle.'%'])
-                    ->orWhereRaw("REPLACE(REPLACE(STUDENTCODE, '-', ''), ' ', '') LIKE ?", ['%'.$needle.'%']);
+        $fromReg = DB::connection('reg')
+            ->table('studentmaster as sm')
+            ->leftJoin('prefix as p', 'sm.PREFIXID', '=', 'p.PREFIXID')
+            ->leftJoin('program as pr', 'sm.PROGRAMID', '=', 'pr.PROGRAMID')
+            ->leftJoin('department as d', function ($join) {
+                $join->on('sm.FACULTYID', '=', 'd.FACULTYID')
+                    ->on('sm.DEPARTMENTID', '=', 'd.DEPARTMENTID');
             })
-            ->orderByDesc('imported_at')
-            ->orderByDesc('YEAR')
-            ->orderBy('STUDENTCODE')
-            ->limit($limit * 3)
+            ->where('sm.FACULTYID', self::FACULTY_SCIENCE)
+            ->where(function ($q) use ($raw, $needle) {
+                $q->where('sm.STUDENTCODE', 'like', $raw.'%')
+                    ->orWhere('sm.STUDENTCODE', 'like', '%'.$raw.'%')
+                    ->orWhereRaw("REPLACE(REPLACE(sm.STUDENTCODE, '-', ''), ' ', '') LIKE ?", [$needle.'%'])
+                    ->orWhereRaw("REPLACE(REPLACE(sm.STUDENTCODE, '-', ''), ' ', '') LIKE ?", ['%'.$needle.'%']);
+            })
+            ->orderByRaw('CASE WHEN sm.STUDENTCODE LIKE ? THEN 0 ELSE 1 END', [$raw.'%'])
+            ->orderBy('sm.STUDENTCODE')
+            ->limit($limit * 2)
+            ->select([
+                'sm.STUDENTID',
+                'sm.STUDENTCODE',
+                'sm.STUDENTNAME',
+                'sm.STUDENTSURNAME',
+                'p.PREFIXABB',
+                'pr.PROGRAMNAME',
+                'd.DEPARTMENTNAME',
+            ])
             ->get();
 
-        foreach ($cached as $row) {
-            $push([
-                'source' => 'cache',
-                'STUDENTID' => $row->STUDENTID,
-                'STUDENTCODE' => $row->STUDENTCODE,
-                'PREFIXABB' => $row->PREFIXABB,
-                'STUDENTNAME' => $row->STUDENTNAME,
-                'STUDENTSURNAME' => $row->STUDENTSURNAME,
-                'PROGRAMNAME' => $row->PROGRAMNAME,
-                'DEPARTMENTNAME' => $row->DEPARTMENTNAME,
-                'CITIZENID' => $row->CITIZENID,
-                'full_name' => $row->fullName(),
-                'TERM' => $row->TERM,
-                'YEAR' => $row->YEAR,
-            ]);
+        foreach ($fromReg as $row) {
+            $remember($this->formatLookupRow($row, 'reg'), true);
         }
 
-        if (count($results) < $limit) {
-            $fromReg = DB::connection('reg')
-                ->table('studentmaster as sm')
-                ->leftJoin('prefix as p', 'sm.PREFIXID', '=', 'p.PREFIXID')
-                ->leftJoin('program as pr', 'sm.PROGRAMID', '=', 'pr.PROGRAMID')
-                ->leftJoin('department as d', function ($join) {
-                    $join->on('sm.FACULTYID', '=', 'd.FACULTYID')
-                        ->on('sm.DEPARTMENTID', '=', 'd.DEPARTMENTID');
-                })
-                ->leftJoin('vstudentbio as bio', 'sm.STUDENTID', '=', 'bio.STUDENTID')
-                ->where('sm.FACULTYID', self::FACULTY_SCIENCE)
+        if (count($byCode) < $limit) {
+            $cached = LateRegStudent::query()
                 ->where(function ($q) use ($raw, $needle) {
-                    $q->where('sm.STUDENTCODE', 'like', $raw.'%')
-                        ->orWhere('sm.STUDENTCODE', 'like', '%'.$raw.'%')
-                        ->orWhereRaw("REPLACE(REPLACE(sm.STUDENTCODE, '-', ''), ' ', '') LIKE ?", [$needle.'%'])
-                        ->orWhereRaw("REPLACE(REPLACE(sm.STUDENTCODE, '-', ''), ' ', '') LIKE ?", ['%'.$needle.'%'])
-                        ->orWhere('bio.STUDENTCODE', 'like', $raw.'%')
-                        ->orWhereRaw("REPLACE(REPLACE(IFNULL(bio.STUDENTCODE, ''), '-', ''), ' ', '') LIKE ?", [$needle.'%']);
+                    $q->where('STUDENTCODE', 'like', $raw.'%')
+                        ->orWhere('STUDENTCODE', 'like', '%'.$raw.'%')
+                        ->orWhereRaw("REPLACE(REPLACE(STUDENTCODE, '-', ''), ' ', '') LIKE ?", [$needle.'%'])
+                        ->orWhereRaw("REPLACE(REPLACE(STUDENTCODE, '-', ''), ' ', '') LIKE ?", ['%'.$needle.'%']);
                 })
-                ->orderBy('sm.STUDENTCODE')
-                ->limit($limit)
-                ->select([
-                    'sm.STUDENTID',
-                    'sm.STUDENTCODE',
-                    'sm.STUDENTNAME',
-                    'sm.STUDENTSURNAME',
-                    'p.PREFIXABB',
-                    'pr.PROGRAMNAME',
-                    'd.DEPARTMENTNAME',
-                ])
+                ->orderByDesc('imported_at')
+                ->orderByDesc('YEAR')
+                ->orderBy('STUDENTCODE')
+                ->limit($limit * 3)
                 ->get();
 
-            foreach ($fromReg as $row) {
-                $push($this->formatLookupRow($row, 'reg'));
+            foreach ($cached as $row) {
+                $remember([
+                    'source' => 'cache',
+                    'STUDENTID' => $row->STUDENTID,
+                    'STUDENTCODE' => $row->STUDENTCODE,
+                    'PREFIXABB' => $row->PREFIXABB,
+                    'STUDENTNAME' => $row->STUDENTNAME,
+                    'STUDENTSURNAME' => $row->STUDENTSURNAME,
+                    'PROGRAMNAME' => $row->PROGRAMNAME,
+                    'DEPARTMENTNAME' => $row->DEPARTMENTNAME,
+                    'CITIZENID' => $row->CITIZENID,
+                    'full_name' => $row->fullName(),
+                    'TERM' => $row->TERM,
+                    'YEAR' => $row->YEAR,
+                ]);
             }
         }
 
-        return $results;
+        return array_values(array_slice($byCode, 0, $limit));
     }
 
     /**
@@ -303,15 +299,25 @@ class LateExamService
      */
     public function lookupStudent(string $codeOrCitizen): ?array
     {
+        $raw = trim($codeOrCitizen);
+        $needle = str_replace(['-', ' '], '', $raw);
+        if ($raw === '') {
+            return null;
+        }
+
+        $exact = $this->lookupFromReg($needle, $raw);
+        if ($exact) {
+            return $exact;
+        }
+
         $matches = $this->searchStudents($codeOrCitizen, 5);
         if ($matches === []) {
             return null;
         }
 
-        $needle = str_replace(['-', ' '], '', trim($codeOrCitizen));
         foreach ($matches as $row) {
             $code = str_replace(['-', ' '], '', (string) $row['STUDENTCODE']);
-            if ($code === $needle || (string) $row['STUDENTCODE'] === trim($codeOrCitizen)) {
+            if ($code === $needle || (string) $row['STUDENTCODE'] === $raw) {
                 return $row;
             }
         }
@@ -672,7 +678,7 @@ class LateExamService
      */
     private function lookupFromReg(string $needle, string $raw): ?array
     {
-        $base = DB::connection('reg')
+        $row = DB::connection('reg')
             ->table('studentmaster as sm')
             ->leftJoin('prefix as p', 'sm.PREFIXID', '=', 'p.PREFIXID')
             ->leftJoin('program as pr', 'sm.PROGRAMID', '=', 'pr.PROGRAMID')
@@ -680,8 +686,11 @@ class LateExamService
                 $join->on('sm.FACULTYID', '=', 'd.FACULTYID')
                     ->on('sm.DEPARTMENTID', '=', 'd.DEPARTMENTID');
             })
-            ->leftJoin('vstudentbio as bio', 'sm.STUDENTID', '=', 'bio.STUDENTID')
             ->where('sm.FACULTYID', self::FACULTY_SCIENCE)
+            ->where(function ($q) use ($needle, $raw) {
+                $q->where('sm.STUDENTCODE', $raw)
+                    ->orWhereRaw("REPLACE(REPLACE(sm.STUDENTCODE, '-', ''), ' ', '') = ?", [$needle]);
+            })
             ->select([
                 'sm.STUDENTID',
                 'sm.STUDENTCODE',
@@ -691,20 +700,10 @@ class LateExamService
                 'pr.PROGRAMNAME',
                 'd.DEPARTMENTNAME',
                 DB::raw('NULL as CITIZENID'),
-            ]);
-
-        // Prefer studentmaster code; also match vstudentbio.STUDENTCODE when present
-        $byCode = (clone $base)
-            ->where(function ($q) use ($needle, $raw) {
-                $q->where('sm.STUDENTCODE', $raw)
-                    ->orWhereRaw("REPLACE(REPLACE(sm.STUDENTCODE, '-', ''), ' ', '') = ?", [$needle])
-                    ->orWhere('bio.STUDENTCODE', $raw)
-                    ->orWhereRaw("REPLACE(REPLACE(IFNULL(bio.STUDENTCODE, ''), '-', ''), ' ', '') = ?", [$needle]);
-            })
-            ->orderByDesc('sm.STUDENTCODE')
+            ])
             ->first();
 
-        return $byCode ? $this->formatLookupRow($byCode, 'reg') : null;
+        return $row ? $this->formatLookupRow($row, 'reg') : null;
     }
 
     /**
