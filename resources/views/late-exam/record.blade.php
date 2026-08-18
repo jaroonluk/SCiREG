@@ -357,8 +357,8 @@
                     <p class="hint" id="roomHint">พิมพ์บางส่วนเพื่อเลือกห้องจากรายการ หากไม่มีในรายการพิมพ์ห้องเองได้</p>
                 </div>
                 <div class="field">
-                    <label for="SEAT_NO">เลขที่นั่งสอบ <span class="muted" style="font-weight:500">(ไม่บังคับ)</span></label>
-                    <input type="text" name="SEAT_NO" id="SEAT_NO" value="{{ old('SEAT_NO') }}" maxlength="20" placeholder="เช่น 15 (ถ้าไม่มีเว้นว่างได้)">
+                    <label for="SEAT_NO">เลขที่นั่งสอบ</label>
+                    <input type="text" name="SEAT_NO" id="SEAT_NO" value="{{ old('SEAT_NO') }}" maxlength="20" placeholder="เช่น A15 (ถ้าไม่มีให้เว้นว่างได้)">
                 </div>
                 <div class="field">
                     <label for="EXAM_TYPE">ช่วงสอบ</label>
