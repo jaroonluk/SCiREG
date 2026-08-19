@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
         $middleware->alias([
             'scireg.role' => \App\Http\Middleware\EnsureSciregRole::class,
+            'scireg.admin' => \App\Http\Middleware\EnsureSciregAdmin::class,
             'scireg.audit' => \App\Http\Middleware\LogSciregAudit::class,
         ]);
     })

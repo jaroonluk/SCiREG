@@ -103,16 +103,29 @@ class EofficeUser extends Authenticatable
         ], true);
     }
 
+    public function isSciregAdmin(): bool
+    {
+        $email = strtolower(trim((string) ($this->email ?? '')));
+        if ($email === '') {
+            return false;
+        }
+
+        return in_array($email, config('scireg.admin_emails', []), true);
+    }
+
+    public function canViewAuditLogs(): bool
+    {
+        return $this->isSciregAdmin();
+    }
+
     public function hasSciregAccess(): bool
     {
-        return $this->sciregPrivilege()->exists();
+        return $this->isSciregAdmin() || $this->sciregPrivilege()->exists();
     }
 
     public function getHasSciregAccessAttribute(): bool
     {
-        return $this->relationLoaded('sciregPrivilege')
-            ? $this->sciregPrivilege !== null
-            : $this->hasSciregAccess();
+        return $this->hasSciregAccess();
     }
 
     public function sciregLevel(): ?int
@@ -126,6 +139,10 @@ class EofficeUser extends Authenticatable
 
     public function sciregRoleLabel(): string
     {
+        if ($this->isSciregAdmin()) {
+            return 'ผู้ดูแลระบบ';
+        }
+
         $level = $this->sciregLevel();
 
         return $level ? Privilege::levelLabel($level) : 'ไม่มีสิทธิ';
@@ -133,17 +150,17 @@ class EofficeUser extends Authenticatable
 
     public function isServiceOfficer(): bool
     {
-        return $this->sciregLevel() === Privilege::LEVEL_SERVICE;
+        return $this->isSciregAdmin() || $this->sciregLevel() === Privilege::LEVEL_SERVICE;
     }
 
     public function isDepartmentOfficer(): bool
     {
-        return $this->sciregLevel() === Privilege::LEVEL_DEPARTMENT;
+        return ! $this->isSciregAdmin() && $this->sciregLevel() === Privilege::LEVEL_DEPARTMENT;
     }
 
     public function isFinanceOfficer(): bool
     {
-        return $this->sciregLevel() === Privilege::LEVEL_FINANCE;
+        return ! $this->isSciregAdmin() && $this->sciregLevel() === Privilege::LEVEL_FINANCE;
     }
 
     public function canManageUsers(): bool
@@ -153,7 +170,7 @@ class EofficeUser extends Authenticatable
 
     public function canAccessPayments(): bool
     {
-        return in_array($this->sciregLevel(), [
+        return $this->isSciregAdmin() || in_array($this->sciregLevel(), [
             Privilege::LEVEL_SERVICE,
             Privilege::LEVEL_FINANCE,
         ], true);
@@ -166,7 +183,7 @@ class EofficeUser extends Authenticatable
 
     public function canAccessSummaryReport(): bool
     {
-        return in_array($this->sciregLevel(), [
+        return $this->isSciregAdmin() || in_array($this->sciregLevel(), [
             Privilege::LEVEL_SERVICE,
             Privilege::LEVEL_DEPARTMENT,
         ], true);

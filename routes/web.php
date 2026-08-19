@@ -49,8 +49,6 @@ Route::middleware(['auth', 'scireg.role', 'scireg.audit'])->group(function () {
         Route::post('/users/permissions/grant', [UserPermissionController::class, 'grant'])->name('users.permissions.grant');
         Route::post('/users/permissions/revoke', [UserPermissionController::class, 'revoke'])->name('users.permissions.revoke');
 
-        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
-
         Route::get('/late-exam/import', [LateExamController::class, 'importIndex'])->name('late-exam.import');
         Route::post('/late-exam/import', [LateExamController::class, 'importStore'])->name('late-exam.import.store');
 
@@ -81,6 +79,10 @@ Route::middleware(['auth', 'scireg.role', 'scireg.audit'])->group(function () {
             ->name('late-exam.term-setting');
         Route::put('/late-exam/term-setting', [LateExamTermSettingController::class, 'update'])
             ->name('late-exam.term-setting.update');
+    });
+
+    Route::middleware('scireg.admin')->group(function () {
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
     });
 
     Route::middleware('scireg.role:'.Privilege::LEVEL_SERVICE.','.Privilege::LEVEL_DEPARTMENT)->group(function () {

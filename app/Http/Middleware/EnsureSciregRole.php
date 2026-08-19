@@ -21,6 +21,10 @@ class EnsureSciregRole
 
         $user->loadMissing('sciregPrivilege');
 
+        if ($user->isSciregAdmin()) {
+            return $next($request);
+        }
+
         if ($levels === []) {
             return $next($request);
         }

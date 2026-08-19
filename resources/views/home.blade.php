@@ -208,46 +208,9 @@
 
         $zones = [];
 
-        $feeMenus = [];
-        if ($user->canAccessPayments()) {
-            $feeMenus[] = [
-                'route' => 'research-fee.payments',
-                'title' => 'จัดการข้อมูลชำระเงินค่าธรรมเนียมวิจัย',
-                'desc' => 'บันทึกสถานะ ออกเอกสาร และสรุปยอดชำระ',
-                'svg' => '<path d="M4 7h16v10H4z"/><path d="M4 10h16M8 14h3"/><circle cx="17" cy="14" r="1.2"/>',
-            ];
-        }
-        if ($user->canAccessImport()) {
-            $feeMenus[] = [
-                'route' => 'research-fee.import',
-                'title' => 'นำเข้าข้อมูลนักศึกษาจาก REG',
-                'desc' => 'ดึงรายชื่อนักศึกษาระดับบัณฑิตศึกษา',
-                'svg' => '<path d="M12 3v10"/><path d="M8.5 9.5 12 13l3.5-3.5"/><path d="M5 18h14"/>',
-            ];
-        }
-        if ($user->canAccessSummaryReport()) {
-            $feeMenus[] = [
-                'route' => 'research-fee.summary',
-                'title' => 'รายงานค่าธรรมเนียมวิจัย',
-                'desc' => $user->isDepartmentOfficer()
-                    ? 'สรุปและส่งออกเฉพาะสาขาที่สังกัด'
-                    : 'สรุปจำนวนและยอดรับชำระตามสาขาวิชา',
-                'svg' => '<path d="M4 19V5M4 19h16"/><path d="M8 16V10M12 16V7M16 16v-4"/>',
-            ];
-        }
-        if ($feeMenus !== []) {
-            $zones[] = [
-                'title' => 'จัดการค่าธรรมเนียมวิจัย',
-                'desc' => 'ชำระเงิน นำเข้าข้อมูล และรายงานสรุป',
-                'icon' => 'fee',
-                'icon_svg' => '<path d="M4 7h16M4 12h16M4 17h10"/><circle cx="18" cy="17" r="2.2"/>',
-                'menus' => $feeMenus,
-            ];
-        }
-
         if ($user->canAccessLateExam()) {
             $zones[] = [
-                'title' => 'รายงานเข้าสอบช้านักศึกษา',
+                'title' => 'รายงานการเข้าสอบช้าของนักศึกษา',
                 'desc' => 'นำเข้า บันทึก พิมพ์ และสรุปการเข้าสอบช้า',
                 'icon' => 'late',
                 'icon_svg' => '<circle cx="12" cy="13" r="7"/><path d="M12 10v3.5l2.2 1.4M9 3.5h6"/>',
@@ -286,32 +249,73 @@
             ];
         }
 
+        $feeMenus = [];
+        if ($user->canAccessPayments()) {
+            $feeMenus[] = [
+                'route' => 'research-fee.payments',
+                'title' => 'จัดการข้อมูลชำระเงินค่าธรรมเนียมวิจัย',
+                'desc' => 'บันทึกสถานะ ออกเอกสาร และสรุปยอดชำระ',
+                'svg' => '<path d="M4 7h16v10H4z"/><path d="M4 10h16M8 14h3"/><circle cx="17" cy="14" r="1.2"/>',
+            ];
+        }
+        if ($user->canAccessImport()) {
+            $feeMenus[] = [
+                'route' => 'research-fee.import',
+                'title' => 'นำเข้าข้อมูลนักศึกษาจาก REG',
+                'desc' => 'ดึงรายชื่อนักศึกษาระดับบัณฑิตศึกษา',
+                'svg' => '<path d="M12 3v10"/><path d="M8.5 9.5 12 13l3.5-3.5"/><path d="M5 18h14"/>',
+            ];
+        }
+        if ($user->canAccessSummaryReport()) {
+            $feeMenus[] = [
+                'route' => 'research-fee.summary',
+                'title' => 'รายงานค่าธรรมเนียมวิจัย',
+                'desc' => $user->isDepartmentOfficer()
+                    ? 'สรุปและส่งออกเฉพาะสาขาที่สังกัด'
+                    : 'สรุปจำนวนและยอดรับชำระตามสาขาวิชา',
+                'svg' => '<path d="M4 19V5M4 19h16"/><path d="M8 16V10M12 16V7M16 16v-4"/>',
+            ];
+        }
+        if ($feeMenus !== []) {
+            $zones[] = [
+                'title' => 'จัดการค่าธรรมเนียมวิจัย',
+                'desc' => 'ชำระเงิน นำเข้าข้อมูล และรายงานสรุป',
+                'icon' => 'fee',
+                'icon_svg' => '<path d="M4 7h16M4 12h16M4 17h10"/><circle cx="18" cy="17" r="2.2"/>',
+                'menus' => $feeMenus,
+            ];
+        }
+
+        $adminMenus = [];
         if ($user->canManageUsers()) {
+            $adminMenus[] = [
+                'route' => 'users.permissions',
+                'title' => 'กำหนดสิทธิผู้ใช้งานระบบ',
+                'desc' => 'กำหนดสิทธิงานบริการ สาขาวิชา และการเงิน',
+                'svg' => '<path d="M12 3l8 4.5v5.2c0 4.4-2.9 7.8-8 9.3-5.1-1.5-8-4.9-8-9.3V7.5L12 3Z"/><path d="M9.2 12.1l1.8 1.8 3.8-3.8"/>',
+            ];
+            $adminMenus[] = [
+                'route' => 'late-exam.signers',
+                'title' => 'กำหนดผู้บริหารลงนามเอกสาร',
+                'desc' => 'กำหนดผู้ปฏิบัติการแทน/รักษาการแทนคณบดี',
+                'svg' => '<path d="M4 19l3.2-1.1L18 7.1a2.1 2.1 0 0 0-3-3L4.2 14.9 4 19z"/><path d="M13.8 5.2l3 3"/>',
+            ];
+        }
+        if ($user->canViewAuditLogs()) {
+            $adminMenus[] = [
+                'route' => 'audit-logs.index',
+                'title' => 'เข้าดูข้อมูล log',
+                'desc' => 'ติดตามประวัติการใช้งานระบบ (audit log)',
+                'svg' => '<path d="M8 4h8a2 2 0 0 1 2 2v14l-3-1.5L12 20l-3-1.5L6 20V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12h6M9 15h4"/>',
+            ];
+        }
+        if ($adminMenus !== []) {
             $zones[] = [
                 'title' => 'กำหนดสิทธิใช้งาน',
                 'desc' => 'จัดการสิทธิผู้ใช้ ผู้ลงนาม และประวัติการใช้งาน',
                 'icon' => 'users',
                 'icon_svg' => '<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.7-3 2.8-4.8 5.5-4.8S14 16 14.7 19"/><path d="M16 8h5M18.5 5.5v5"/>',
-                'menus' => [
-                    [
-                        'route' => 'users.permissions',
-                        'title' => 'กำหนดสิทธิผู้ใช้งานระบบ',
-                        'desc' => 'กำหนดสิทธิงานบริการ สาขาวิชา และการเงิน',
-                        'svg' => '<path d="M12 3l8 4.5v5.2c0 4.4-2.9 7.8-8 9.3-5.1-1.5-8-4.9-8-9.3V7.5L12 3Z"/><path d="M9.2 12.1l1.8 1.8 3.8-3.8"/>',
-                    ],
-                    [
-                        'route' => 'late-exam.signers',
-                        'title' => 'กำหนดผู้บริหารลงนามเอกสาร',
-                        'desc' => 'กำหนดผู้ปฏิบัติการแทน/รักษาการแทนคณบดี',
-                        'svg' => '<path d="M4 19l3.2-1.1L18 7.1a2.1 2.1 0 0 0-3-3L4.2 14.9 4 19z"/><path d="M13.8 5.2l3 3"/>',
-                    ],
-                    [
-                        'route' => 'audit-logs.index',
-                        'title' => 'เข้าดูข้อมูล log',
-                        'desc' => 'ติดตามประวัติการใช้งานระบบ (audit log)',
-                        'svg' => '<path d="M8 4h8a2 2 0 0 1 2 2v14l-3-1.5L12 20l-3-1.5L6 20V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 12h6M9 15h4"/>',
-                    ],
-                ],
+                'menus' => $adminMenus,
             ];
         }
     @endphp
