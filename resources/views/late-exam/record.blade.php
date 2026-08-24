@@ -319,7 +319,7 @@
                 <div class="field suggest-wrap" id="deptSuggestWrap">
                     <label for="DEPARTMENT_NAME">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 20V6l8-3 8 3v14"/><path d="M9 20v-6h6v6"/></svg>
-                        สาขาวิชา
+                        สาขาวิชา (หลักสูตร)
                     </label>
                     <input type="text" name="DEPARTMENT_NAME" id="DEPARTMENT_NAME" value="{{ old('DEPARTMENT_NAME') }}" maxlength="255" placeholder="พิมพ์เช่น คณิตศาสตร์ หรือ สาขาวิชา..." autocomplete="off">
                     <div class="suggest-list" id="deptSuggestList" role="listbox" hidden></div>
