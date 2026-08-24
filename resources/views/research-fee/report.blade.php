@@ -3,6 +3,8 @@
 <head>
     <meta charset="utf-8">
     <title>รายงานค่าธรรมเนียมวิจัย {{ $filters['term'] }}/{{ $filters['year'] }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('faculty-logo-cut.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('faculty-logo-cut.png') }}">
     <style>
         @page { size: A4 landscape; margin: 12mm; }
         body { font-family: Tahoma, "Sarabun", sans-serif; color:#111; font-size:12px; background: #fffdf7; }

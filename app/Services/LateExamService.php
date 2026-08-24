@@ -264,71 +264,34 @@ class LateExamService
         $raw = trim($query);
         $limit = max(1, min(50, $limit));
 
-        $rows = DB::connection('eoffice')
+        $builder = DB::connection('eoffice')
             ->table('tbldepartment')
             ->whereRaw(
                 "department_name LIKE CONVERT(? USING utf8) COLLATE utf8_general_ci",
                 ['สาขาวิชา%']
-            )
-            ->orderBy('department_name')
-            ->limit(100)
-            ->get(['department_id', 'department_name']);
-
-        $excludeContains = config('late_exam.departments.exclude_contains', []);
-        $rename = config('late_exam.departments.rename', []);
-        $extra = config('late_exam.departments.extra', []);
-
-        $departments = [];
-        $seenNames = [];
-
-        foreach ($rows as $row) {
-            $name = trim((string) $row->department_name);
-
-            foreach ($excludeContains as $needle) {
-                if ($needle !== '' && mb_strpos($name, $needle) !== false) {
-                    continue 2;
-                }
-            }
-
-            if (isset($rename[$name])) {
-                $name = $rename[$name];
-            }
-
-            if ($name === '' || isset($seenNames[$name])) {
-                continue;
-            }
-
-            $seenNames[$name] = true;
-            $departments[] = [
-                'id' => (int) $row->department_id,
-                'name' => $name,
-            ];
-        }
-
-        foreach ($extra as $name) {
-            $name = trim((string) $name);
-            if ($name === '' || isset($seenNames[$name])) {
-                continue;
-            }
-
-            $seenNames[$name] = true;
-            $departments[] = [
-                'id' => 0,
-                'name' => $name,
-            ];
-        }
+            );
 
         if ($raw !== '') {
-            $needle = mb_strtolower($raw);
-            $departments = array_values(array_filter(
-                $departments,
-                fn (array $department): bool => mb_strpos(mb_strtolower($department['name']), $needle) !== false
-            ));
+            $builder->where(function ($q) use ($raw) {
+                $q->whereRaw(
+                    "department_name LIKE CONVERT(? USING utf8) COLLATE utf8_general_ci",
+                    ['%'.$raw.'%']
+                )->orWhereRaw(
+                    "IFNULL(department_name_en, '') LIKE ?",
+                    ['%'.$raw.'%']
+                );
+            });
         }
 
-        usort($departments, fn (array $a, array $b): int => strcmp($a['name'], $b['name']));
+        $rows = $builder
+            ->orderBy('department_name')
+            ->limit($limit)
+            ->get(['department_id', 'department_name']);
 
-        return array_slice($departments, 0, $limit);
+        return $rows->map(fn ($row) => [
+            'id' => (int) $row->department_id,
+            'name' => trim((string) $row->department_name),
+        ])->values()->all();
     }
 
     /**

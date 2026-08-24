@@ -155,20 +155,13 @@ class LateExamController extends Controller
                 ->with('error', 'กรุณาระบุรายละเอียดเมื่อเลือกสาเหตุ อื่น ๆ');
         }
 
-        $userDepartment = trim((string) ($data['DEPARTMENT_NAME'] ?? ''));
-
         $resolved = $this->lateExam->lookupStudent($data['STUDENTCODE']);
         if ($resolved) {
             $data['STUDENTID'] = $resolved['STUDENTID'];
             $data['STUDENT_NAME'] = $resolved['full_name'];
-        }
-
-        if ($userDepartment !== '') {
-            $data['DEPARTMENT_NAME'] = $userDepartment;
-        } elseif ($resolved && filled($resolved['DEPARTMENTNAME'] ?? null)) {
-            $data['DEPARTMENT_NAME'] = $resolved['DEPARTMENTNAME'];
-        } else {
-            $data['DEPARTMENT_NAME'] = null;
+            if (filled($resolved['DEPARTMENTNAME'] ?? null)) {
+                $data['DEPARTMENT_NAME'] = $resolved['DEPARTMENTNAME'];
+            }
         }
 
         $form = $this->lateExam->recordLate([

@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'SCiREG') — SCiREG</title>
+    <link rel="icon" type="image/png" href="{{ asset('faculty-logo-cut.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('faculty-logo-cut.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
@@ -57,7 +59,7 @@
         .logo {
             display: inline-flex;
             align-items: center;
-            gap: 0.45rem;
+            gap: 0.55rem;
             font-family: 'Outfit', sans-serif;
             font-weight: 700;
             font-size: 1.25rem;
@@ -67,7 +69,7 @@
             white-space: nowrap;
         }
         .logo-mark {
-            height: 1.25em;
+            height: 1.55em;
             width: auto;
             display: block;
             flex-shrink: 0;
