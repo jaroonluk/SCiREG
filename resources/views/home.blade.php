@@ -143,6 +143,29 @@
             border-color: rgba(201, 146, 26, 0.35);
             transform: translateY(-1px);
         }
+        .zone-links a.is-featured {
+            background: linear-gradient(145deg, #f0c54a, var(--champaca-deep));
+            border-color: transparent;
+            color: #fffdf5;
+            box-shadow: 0 12px 26px -16px rgba(150, 100, 10, 0.75);
+        }
+        .zone-links a.is-featured:hover {
+            background: linear-gradient(145deg, #f3d06a, #c9921a);
+            border-color: transparent;
+            filter: brightness(1.03);
+            transform: translateY(-2px);
+        }
+        .zone-links a.is-featured .item-icon {
+            background: rgba(255, 253, 245, 0.22);
+            color: #fffdf5;
+        }
+        .zone-links a.is-featured .item-text small {
+            color: rgba(255, 253, 245, 0.88);
+        }
+        .zone-links a.is-featured .item-arrow {
+            opacity: 0.9;
+            color: #fffdf5;
+        }
         .item-icon {
             width: 2.35rem;
             height: 2.35rem;
@@ -226,6 +249,7 @@
                         'title' => 'บันทึกการเข้าสอบช้า',
                         'desc' => 'บันทึกรายการนักศึกษาที่เข้าสอบช้า',
                         'svg' => '<path d="M5 5h10v14H5z"/><path d="M9 9h2.5M9 12h4M9 15h3.5M15 8h4v11h-4"/>',
+                        'featured' => true,
                     ],
                     [
                         'route' => 'late-exam.print',
@@ -358,7 +382,7 @@
                     <ul class="zone-links">
                         @foreach ($zone['menus'] as $menu)
                             <li>
-                                <a href="{{ route($menu['route']) }}">
+                                <a href="{{ route($menu['route']) }}" @class(['is-featured' => !empty($menu['featured'])])>
                                     <span class="item-icon" aria-hidden="true">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">{!! $menu['svg'] !!}</svg>
                                     </span>
