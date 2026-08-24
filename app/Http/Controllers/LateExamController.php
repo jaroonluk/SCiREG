@@ -178,7 +178,7 @@ class LateExamController extends Controller
         ]);
 
         return redirect()
-            ->route('late-exam.print.show', $form->formID)
+            ->route('late-exam.print.show', ['id' => $form->formID, 'from' => 'record'])
             ->with('success', 'บันทึกการเข้าสอบช้าเรียบร้อยแล้ว');
     }
 
@@ -226,9 +226,16 @@ class LateExamController extends Controller
 
         abort_if($records->isEmpty(), 404);
 
+        $from = (string) $request->query('from', 'print');
+        if (! in_array($from, ['print', 'record'], true)) {
+            $from = 'print';
+        }
+
         return view('late-exam.print-form', [
             'records' => $records,
             'signer' => $this->signers->activeSigner(),
+            'backRoute' => $from === 'record' ? 'late-exam.record' : 'late-exam.print',
+            'backLabel' => $from === 'record' ? 'กลับหน้าบันทึก' : 'กลับรายการพิมพ์',
         ]);
     }
 

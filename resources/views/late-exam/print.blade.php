@@ -438,7 +438,7 @@
                                 <td>
                                     <div class="row-actions">
                                         <a class="btn btn-sm btn-primary" target="_blank"
-                                           href="{{ route('late-exam.print.show', $row->formID) }}">
+                                           href="{{ route('late-exam.print.show', ['id' => $row->formID, 'from' => 'print']) }}">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M7 8V4h10v4"/><path d="M6 8h12v4H6z"/><path d="M7 12v8h10v-8"/><path d="M9 15h6"/></svg>
                                             พิมพ์
                                         </a>

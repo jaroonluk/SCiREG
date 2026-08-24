@@ -69,7 +69,7 @@
 <body>
     <div class="toolbar">
         <button class="primary" type="button" onclick="window.print()">พิมพ์</button>
-        <a href="{{ route('late-exam.print') }}">กลับรายการพิมพ์</a>
+        <a href="{{ route($backRoute) }}">{{ $backLabel }}</a>
         <a href="{{ route('late-exam.signers') }}">กำหนดผู้ลงนาม</a>
     </div>
 
