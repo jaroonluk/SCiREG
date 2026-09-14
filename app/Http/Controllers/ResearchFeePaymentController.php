@@ -29,8 +29,7 @@ class ResearchFeePaymentController extends Controller
             ->orderBy('fr.level')
             ->orderBy('fr.couse')
             ->orderBy('fr.std_code')
-            ->paginate(25)
-            ->withQueryString();
+            ->get();
 
         return view('research-fee.payments', [
             ...$this->viewData($filters, $query),

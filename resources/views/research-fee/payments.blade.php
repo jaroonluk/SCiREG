@@ -180,22 +180,6 @@
     .doc-btn.sponsor { color: #0f766e; background: rgba(15,118,110,.08); border-color: rgba(15,118,110,.22); }
     .doc-btn.sponsor:hover { background: rgba(15,118,110,.16); }
 
-    .pager {
-        padding: .9rem 1.15rem 1.15rem; display: flex; justify-content: space-between;
-        align-items: center; gap: .75rem; flex-wrap: wrap; color: var(--ink-muted); font-size: .88rem;
-        border-top: 1px solid rgba(201,146,26,.14);
-    }
-    .pager-links { display: flex; flex-wrap: wrap; gap: .35rem; }
-    .pager-links a, .pager-links span {
-        min-width: 2rem; height: 2rem; display: grid; place-items: center; padding: 0 .4rem;
-        border: 1px solid rgba(201,146,26,.25); border-radius: .55rem; text-decoration: none; background: #fffef9;
-        font-weight: 600; font-size: .84rem;
-    }
-    .pager-links a:hover { border-color: var(--champaca); color: var(--champaca-deep); }
-    .pager-links .current {
-        background: linear-gradient(145deg, #f0c94a, var(--champaca-deep));
-        border-color: transparent; color: #fffdf5;
-    }
     .empty-row { text-align: center; padding: 2.2rem !important; color: var(--ink-muted); }
 
     @media (max-width: 1100px) {
@@ -344,7 +328,7 @@
                 <tbody>
                 @forelse($rows as $index => $row)
                     <tr>
-                        <td>{{ $rows->firstItem()+$index }}</td>
+                        <td>{{ $index + 1 }}</td>
                         <td class="student"><strong>{{ $row->name }}</strong><small>{{ $row->std_code }}</small></td>
                         <td><strong>{{ $row->level }}</strong><br><small>{{ $row->couse ?: '—' }}</small></td>
                         <td>{{ $row->depart_name ?: 'ไม่ระบุ' }}</td>
@@ -394,18 +378,6 @@
                 </tbody>
             </table>
         </div>
-        @if($rows->hasPages())
-            <div class="pager">
-                <span>แสดง {{ $rows->firstItem() }}–{{ $rows->lastItem() }} จาก {{ number_format($rows->total()) }}</span>
-                <div class="pager-links">
-                    @if($rows->previousPageUrl())<a href="{{ $rows->previousPageUrl() }}">‹</a>@endif
-                    @foreach($rows->getUrlRange(max(1,$rows->currentPage()-2),min($rows->lastPage(),$rows->currentPage()+2)) as $page=>$url)
-                        @if($page===$rows->currentPage())<span class="current">{{ $page }}</span>@else<a href="{{ $url }}">{{ $page }}</a>@endif
-                    @endforeach
-                    @if($rows->nextPageUrl())<a href="{{ $rows->nextPageUrl() }}">›</a>@endif
-                </div>
-            </div>
-        @endif
     </div>
 @endsection
 
