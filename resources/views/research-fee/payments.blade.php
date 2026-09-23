@@ -131,15 +131,15 @@
     .table-card { padding: 0; animation-delay: .1s; }
     .table-card .panel-head { padding: 1.15rem 1.25rem 0; }
     .table-wrap { overflow-x: auto; }
-    table { border-collapse: collapse; width: 100%; table-layout: fixed; min-width: 980px; }
-    col.col-no { width: 3.2rem; }
-    col.col-student { width: 16%; }
-    col.col-course { width: 18%; }
-    col.col-depart { width: 14%; }
+    table { border-collapse: collapse; width: 100%; table-layout: fixed; min-width: 1020px; }
+    col.col-no { width: 2.8rem; }
+    col.col-student { width: 13%; }
+    col.col-course { width: 14%; }
+    col.col-depart { width: 11%; }
     col.col-payment { width: auto; }
-    col.col-docs { width: 9.5rem; }
+    col.col-docs { width: 8.5rem; }
     th, td {
-        padding: .72rem .65rem; border-bottom: 1px solid rgba(201,146,26,.12);
+        padding: .72rem .55rem; border-bottom: 1px solid rgba(201,146,26,.12);
         text-align: left; vertical-align: top; font-size: .88rem; word-break: break-word;
     }
     th {
@@ -149,12 +149,17 @@
     tbody tr:hover td { background: rgba(230,180,34,.06); }
     .student strong { display: block; }
     .student small { color: var(--ink-muted); }
-    .payment-form { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; min-width: 0; }
-    .payment-form select { flex: 1 1 9.5rem; max-width: 11rem; }
+    .payment-form { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; min-width: 0; }
+    .payment-form select { flex: 0 1 8.5rem; max-width: 9.25rem; }
     .payment-form .paid-fields { display: contents; }
-    .payment-form input[type="number"],
-    .payment-form input[name="slip_no"] { flex: 1 1 6.5rem; max-width: 8.5rem; }
-    .payment-form .btn { flex: 0 0 auto; border-radius: .7rem; padding: .45rem .85rem; font-size: .86rem; }
+    .payment-form input[type="number"] { flex: 0 1 6rem; max-width: 7rem; }
+    .payment-form input[name="slip_no"] {
+        flex: 1 1 13rem;
+        min-width: 12rem;
+        max-width: 17rem;
+        letter-spacing: .02em;
+    }
+    .payment-form .btn { flex: 0 0 auto; border-radius: .7rem; padding: .45rem .75rem; font-size: .86rem; }
     .status-1 { color: #9a3412; } .status-2 { color: #475569; } .status-3 { color: #166534; }
 
     .docs-head { display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; }
