@@ -152,11 +152,17 @@
     .payment-form { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; min-width: 0; }
     .payment-form select { flex: 0 1 8.5rem; max-width: 9.25rem; }
     .payment-form .paid-fields { display: contents; }
-    .payment-form input[type="number"] { flex: 0 1 6rem; max-width: 7rem; }
+    .payment-form input[type="number"] {
+        flex: 0 1 8.5rem;
+        min-width: 7.5rem;
+        max-width: 9.5rem;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
     .payment-form input[name="slip_no"] {
-        flex: 1 1 13rem;
-        min-width: 12rem;
-        max-width: 17rem;
+        flex: 1 1 12rem;
+        min-width: 11rem;
+        max-width: 16rem;
         letter-spacing: .02em;
     }
     .payment-form .btn { flex: 0 0 auto; border-radius: .7rem; padding: .45rem .75rem; font-size: .86rem; }
