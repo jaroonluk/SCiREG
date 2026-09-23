@@ -282,6 +282,14 @@
                 'svg' => '<path d="M4 7h16v10H4z"/><path d="M4 10h16M8 14h3"/><circle cx="17" cy="14" r="1.2"/>',
             ];
         }
+        if ($user->canAccessPaymentUpload()) {
+            $feeMenus[] = [
+                'route' => 'research-fee.payments.upload',
+                'title' => 'อัปโหลดไฟล์ชำระค่าธรรมเนียม',
+                'desc' => 'นำเข้า Excel แล้วตรวจสอบก่อนบันทึกยอดชำระ',
+                'svg' => '<path d="M12 3v10"/><path d="M8.5 9.5 12 13l3.5-3.5"/><path d="M5 18h14"/><path d="M16 16h4v4"/>',
+            ];
+        }
         if ($user->canAccessImport()) {
             $feeMenus[] = [
                 'route' => 'research-fee.import',

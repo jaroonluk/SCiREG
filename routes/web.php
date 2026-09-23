@@ -7,6 +7,7 @@ use App\Http\Controllers\LateExamSignerController;
 use App\Http\Controllers\LateExamTermSettingController;
 use App\Http\Controllers\ResearchFeeImportController;
 use App\Http\Controllers\ResearchFeePaymentController;
+use App\Http\Controllers\ResearchFeePaymentUploadController;
 use App\Http\Controllers\ResearchFeeSummaryReportController;
 use App\Http\Controllers\UserPermissionController;
 use App\Models\Privilege;
@@ -39,6 +40,12 @@ Route::middleware(['auth', 'scireg.role', 'scireg.audit'])->group(function () {
             ->name('research-fee.notice.student');
         Route::get('/research-fee/notices/sponsor', [ResearchFeePaymentController::class, 'sponsorNotice'])
             ->name('research-fee.notice.sponsor');
+        Route::get('/research-fee/payments/upload', [ResearchFeePaymentUploadController::class, 'index'])
+            ->name('research-fee.payments.upload');
+        Route::post('/research-fee/payments/upload/preview', [ResearchFeePaymentUploadController::class, 'preview'])
+            ->name('research-fee.payments.upload.preview');
+        Route::post('/research-fee/payments/upload/confirm', [ResearchFeePaymentUploadController::class, 'confirm'])
+            ->name('research-fee.payments.upload.confirm');
     });
 
     Route::middleware('scireg.role:'.Privilege::LEVEL_SERVICE)->group(function () {

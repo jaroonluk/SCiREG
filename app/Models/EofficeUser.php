@@ -176,6 +176,11 @@ class EofficeUser extends Authenticatable
         ], true);
     }
 
+    public function canAccessPaymentUpload(): bool
+    {
+        return $this->canAccessPayments();
+    }
+
     public function canAccessImport(): bool
     {
         return $this->isServiceOfficer();

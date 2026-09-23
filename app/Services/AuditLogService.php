@@ -75,6 +75,8 @@ class AuditLogService
             'logout' => ['auth', 'logout', 'ออกจากระบบ'],
             'research-fee.payments.update' => ['research_fee', 'payment.update', 'บันทึก/แก้ไขสถานะชำระค่าธรรมเนียมวิจัย'],
             'research-fee.payments.report' => ['research_fee', 'payment.report', 'ดูรายงานการชำระค่าธรรมเนียมวิจัย'],
+            'research-fee.payments.upload.preview' => ['research_fee', 'payment.upload.preview', 'อัปโหลดไฟล์ Excel ชำระค่าธรรมเนียมวิจัย (ตรวจสอบ)'],
+            'research-fee.payments.upload.confirm' => ['research_fee', 'payment.upload.confirm', 'ยืนยันบันทึกชำระค่าธรรมเนียมวิจัยจากไฟล์ Excel'],
             'research-fee.notice.student' => ['research_fee', 'notice.student', 'ดาวน์โหลดหนังสือถึงนักศึกษา'],
             'research-fee.notice.sponsor' => ['research_fee', 'notice.sponsor', 'ดาวน์โหลดหนังสือถึงต้นสังกัด'],
             'research-fee.import.store' => ['research_fee', 'import.store', 'นำเข้าข้อมูลค่าธรรมเนียมวิจัยจาก REG'],
