@@ -23,6 +23,7 @@ class ResearchFeePaymentUploadService
      *   term:int,
      *   year:int,
      *   storage_path:string,
+     *   storage_disk:string,
      *   original_name:string,
      *   matched:list<array<string,mixed>>,
      *   unmatched:list<array<string,mixed>>,
@@ -33,7 +34,7 @@ class ResearchFeePaymentUploadService
     public function preview(UploadedFile $file, int $term, int $year): array
     {
         $excelRows = $this->parseExcel($file->getRealPath() ?: $file->getPathname());
-        $storagePath = $this->storeToMinio($file, $term, $year);
+        $stored = $this->storeUploadedFile($file, $term, $year);
         $students = $this->studentsForTermYear($term, $year);
         $indexed = $this->indexStudentsByNormalizedName($students);
 
@@ -94,7 +95,8 @@ class ResearchFeePaymentUploadService
         return [
             'term' => $term,
             'year' => $year,
-            'storage_path' => $storagePath,
+            'storage_path' => $stored['path'],
+            'storage_disk' => $stored['disk'],
             'original_name' => $file->getClientOriginalName(),
             'matched' => $matched,
             'unmatched' => $unmatched,
@@ -149,22 +151,37 @@ class ResearchFeePaymentUploadService
         ];
     }
 
-    private function storeToMinio(UploadedFile $file, int $term, int $year): string
+    /**
+     * @return array{disk:string,path:string}
+     */
+    private function storeUploadedFile(UploadedFile $file, int $term, int $year): array
     {
         $safeName = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) ?: 'payment';
         $ext = strtolower($file->getClientOriginalExtension() ?: 'xlsx');
         $directory = sprintf('research-fee/payments/%d/term%d', $year, $term);
         $filename = sprintf('%s_%s.%s', now()->format('Ymd_His'), $safeName, $ext);
+        $objectKey = $directory.'/'.$filename;
 
-        $stored = Storage::disk('minio')->putFileAs($directory, $file, $filename, [
-            'visibility' => 'private',
-        ]);
+        try {
+            $path = app(MinioObjectStorage::class)->putFile($objectKey, $file);
 
-        if ($stored === false || $stored === '') {
-            throw new RuntimeException('อัปโหลดไฟล์ไป MinIO ไม่สำเร็จ');
+            return [
+                'disk' => 'minio',
+                'path' => $path,
+            ];
+        } catch (\Throwable $e) {
+            report($e);
         }
 
-        return $stored;
+        $stored = Storage::disk('local')->putFileAs($directory, $file, $filename);
+        if (! is_string($stored) || $stored === '') {
+            throw new RuntimeException('บันทึกไฟล์อัปโหลดไม่สำเร็จ');
+        }
+
+        return [
+            'disk' => 'local',
+            'path' => $stored,
+        ];
     }
 
     /**

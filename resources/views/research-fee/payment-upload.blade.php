@@ -199,7 +199,7 @@
                 <div class="stat warn"><small>ไม่พบ/ชื่อซ้ำ</small><strong>{{ number_format(($result['unmatched_count'] ?? 0)+($result['ambiguous_count'] ?? 0)) }}</strong></div>
             </div>
             @if(!empty($result['storage_path']))
-                <p class="meta">ไฟล์ต้นทางบน MinIO: {{ $result['storage_path'] }}</p>
+                <p class="meta">ไฟล์ต้นทาง ({{ $result['storage_disk'] ?? 'storage' }}): {{ $result['storage_path'] }}</p>
             @endif
         </div>
     @endif

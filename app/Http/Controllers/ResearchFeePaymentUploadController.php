@@ -100,6 +100,7 @@ class ResearchFeePaymentUploadController extends Controller
             ->with('payment_upload_result', [
                 ...$result,
                 'storage_path' => $preview['storage_path'] ?? null,
+                'storage_disk' => $preview['storage_disk'] ?? null,
                 'original_name' => $preview['original_name'] ?? null,
                 'matched_count' => count($preview['matched']),
                 'unmatched_count' => count($preview['unmatched'] ?? []),
