@@ -386,6 +386,8 @@
                 <form method="POST" action="{{ route('research-fee.payments.upload.confirm') }}" id="confirm-form">
                     @csrf
                     <input type="hidden" name="token" value="{{ $preview['token'] }}">
+                    <input type="hidden" name="term" value="{{ $preview['term'] }}">
+                    <input type="hidden" name="year" value="{{ $preview['year'] }}">
                     <button class="btn btn-primary" type="submit" @disabled(empty($preview['matched'])) id="confirm-btn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5v5.2c0 4.4-2.9 7.8-8 9.3-5.1-1.5-8-4.9-8-9.3V7.5L12 3Z"/><path d="M9.2 12.1l1.8 1.8 3.8-3.8"/></svg>
                         ยืนยันบันทึก {{ number_format(count($preview['matched'] ?? [])) }} รายการ
