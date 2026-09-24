@@ -44,12 +44,45 @@ class ResearchFeePaymentUploadService
         $ambiguous = [];
         $usedStdCodes = [];
 
+        $nameCounts = [];
+        $slipCounts = [];
+        foreach ($excelRows as $row) {
+            $nameKey = $this->normalizeName($row['excel_name']);
+            if ($nameKey !== '') {
+                $nameCounts[$nameKey] = ($nameCounts[$nameKey] ?? 0) + 1;
+            }
+            $slipNo = trim((string) ($row['slip_no'] ?? ''));
+            if ($slipNo !== '') {
+                $slipCounts[$slipNo] = ($slipCounts[$slipNo] ?? 0) + 1;
+            }
+        }
+
         foreach ($excelRows as $row) {
             $key = $this->normalizeName($row['excel_name']);
             if ($key === '') {
                 $unmatched[] = [
                     ...$row,
                     'reason' => 'ไม่มีชื่อในไฟล์',
+                ];
+
+                continue;
+            }
+
+            $slipNo = trim((string) ($row['slip_no'] ?? ''));
+            $fileIssues = [];
+            if (($nameCounts[$key] ?? 0) > 1) {
+                $fileIssues[] = 'ชื่อซ้ำในไฟล์อัปโหลด';
+            }
+            if ($slipNo !== '' && ($slipCounts[$slipNo] ?? 0) > 1) {
+                $fileIssues[] = 'เลขที่ใบเสร็จซ้ำในไฟล์อัปโหลด';
+            }
+
+            if ($fileIssues !== []) {
+                $ambiguous[] = [
+                    ...$row,
+                    'reason' => implode(' และ ', $fileIssues),
+                    'duplicate_type' => 'file',
+                    'candidates' => [],
                 ];
 
                 continue;
@@ -74,6 +107,7 @@ class ResearchFeePaymentUploadService
                 $ambiguous[] = [
                     ...$row,
                     'reason' => 'พบชื่อซ้ำในระบบมากกว่า 1 รายการ',
+                    'duplicate_type' => 'system_name',
                     'candidates' => array_map(fn (object $s) => [
                         'std_code' => $s->std_code,
                         'name' => $s->name,
@@ -109,6 +143,7 @@ class ResearchFeePaymentUploadService
             'matched' => $matched,
             'unmatched' => $unmatched,
             'ambiguous' => $ambiguous,
+            'has_duplicates' => $ambiguous !== [],
             'total_rows' => count($excelRows),
         ];
     }

@@ -102,6 +102,14 @@
     .alert svg { width: 1.1rem; height: 1.1rem; flex-shrink: 0; margin-top: .05rem; }
     .alert-ok { background: #eefbf1; border: 1px solid #bbdfc4; color: #166534; }
     .alert-err { background: #fff1e8; border: 1px solid rgba(154,52,18,.2); color: #9a3412; }
+    .alert-warn {
+        background: #fff7ed; border: 1px solid rgba(194,65,12,.22); color: #9a3412;
+        display: grid; gap: .45rem;
+    }
+    .alert-warn strong { font-weight: 700; }
+    .dup-list { margin: .2rem 0 0; padding-left: 1.15rem; line-height: 1.55; }
+    .dup-list li { margin: .15rem 0; }
+    .stat.dup strong { color: #c2410c; }
 
     .summary {
         display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .75rem; margin-bottom: 1rem;
@@ -257,7 +265,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v4M12 16h.01"/></svg>
             <div>
                 รูปแบบไฟล์ตามตัวอย่างค่าธรรมเนียมวิจัย: อ่านชื่อจากคอลัมน์ H, จำนวนเงินจากคอลัมน์ G, เลขที่ใบเสร็จจากคอลัมน์ C
-                แล้วจับคู่กับชื่อในระบบของปี/ภาคที่เลือก หากไม่พบจะแจ้งแยกไว้ก่อนบันทึก
+                แล้วจับคู่กับชื่อในระบบของปี/ภาคที่เลือก หากพบชื่อหรือเลขที่ใบเสร็จซ้ำ ระบบจะแจ้งรายละเอียดและยังไม่บันทึกข้อมูล
             </div>
         </div>
     </div>
@@ -281,10 +289,39 @@
                 <div class="stat"><small>ทั้งหมดในไฟล์</small><strong>{{ number_format($preview['total_rows'] ?? 0) }}</strong></div>
                 <div class="stat ok"><small>พบชื่อตรงกัน</small><strong>{{ number_format(count($preview['matched'] ?? [])) }}</strong></div>
                 <div class="stat warn"><small>ไม่พบในระบบ</small><strong>{{ number_format(count($preview['unmatched'] ?? [])) }}</strong></div>
-                <div class="stat muted"><small>ชื่อซ้ำ</small><strong>{{ number_format(count($preview['ambiguous'] ?? [])) }}</strong></div>
+                <div class="stat dup"><small>ชื่อ/ใบเสร็จซ้ำ</small><strong>{{ number_format(count($preview['ambiguous'] ?? [])) }}</strong></div>
             </div>
 
-            <h3 style="font:700 1rem 'Outfit','Sarabun',sans-serif;margin-bottom:.55rem">รายการที่จะอัปเดต</h3>
+            @if(!empty($preview['ambiguous']))
+                <div class="alert alert-warn section-gap" role="alert" style="margin-bottom:1rem">
+                    <div style="display:flex;gap:.5rem;align-items:flex-start">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:1.15rem;height:1.15rem;flex-shrink:0;margin-top:.05rem"><circle cx="12" cy="12" r="8"/><path d="M12 8v4M12 16h.01"/></svg>
+                        <div>
+                            <strong>พบรายการซ้ำ — ระบบยังไม่บันทึกข้อมูลใด ๆ</strong>
+                            <div class="meta" style="margin-top:.2rem;color:#9a3412">
+                                กรุณาตรวจสอบชื่อและเลขที่ใบเสร็จด้านล่าง แล้วแก้ไขไฟล์ก่อนอัปโหลดใหม่
+                            </div>
+                            <ul class="dup-list">
+                                @foreach($preview['ambiguous'] as $row)
+                                    <li>
+                                        ชื่อ <strong>{{ $row['excel_name'] ?: '—' }}</strong>
+                                        · เลขที่ใบเสร็จ <strong>{{ $row['slip_no'] ?: '—' }}</strong>
+                                        <span class="meta"> — {{ $row['reason'] ?? 'รายการซ้ำ' }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <h3 style="font:700 1rem 'Outfit','Sarabun',sans-serif;margin-bottom:.55rem">
+                @if(!empty($preview['ambiguous']))
+                    รายการที่จับคู่ได้ (ยังไม่บันทึก จนกว่าจะไม่มีรายการซ้ำ)
+                @else
+                    รายการที่จะอัปเดต
+                @endif
+            </h3>
             <div class="table-wrap">
                 <table>
                     <thead>
@@ -349,7 +386,7 @@
 
             @if(!empty($preview['ambiguous']))
                 <div class="section-gap">
-                    <h3 style="font:700 1rem 'Outfit','Sarabun',sans-serif;margin-bottom:.55rem;color:#475569">ชื่อซ้ำ — ไม่บันทึกอัตโนมัติ</h3>
+                    <h3 style="font:700 1rem 'Outfit','Sarabun',sans-serif;margin-bottom:.55rem;color:#c2410c">รายละเอียดรายการซ้ำ — ไม่บันทึก</h3>
                     <div class="table-wrap">
                         <table>
                             <thead>
@@ -358,20 +395,24 @@
                                     <th>ชื่อในไฟล์</th>
                                     <th class="num">จำนวนเงิน</th>
                                     <th>เลขที่ใบเสร็จ</th>
-                                    <th>รายการซ้ำในระบบ</th>
+                                    <th>สาเหตุ / รายการในระบบ</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($preview['ambiguous'] as $i => $row)
                                     <tr>
                                         <td>{{ $i + 1 }}</td>
-                                        <td>{{ $row['excel_name'] }}</td>
+                                        <td><strong>{{ $row['excel_name'] }}</strong></td>
                                         <td class="num">{{ number_format((float)$row['amount'], 2) }}</td>
-                                        <td>{{ $row['slip_no'] ?: '—' }}</td>
+                                        <td><strong>{{ $row['slip_no'] ?: '—' }}</strong></td>
                                         <td class="meta">
-                                            @foreach(($row['candidates'] ?? []) as $c)
-                                                {{ $c['std_code'] }} {{ $c['name'] }} ({{ $c['depart_name'] ?: '—' }})@if(!$loop->last)<br>@endif
-                                            @endforeach
+                                            {{ $row['reason'] ?? 'รายการซ้ำ' }}
+                                            @if(!empty($row['candidates']))
+                                                <br>
+                                                @foreach($row['candidates'] as $c)
+                                                    {{ $c['std_code'] }} {{ $c['name'] }} ({{ $c['depart_name'] ?: '—' }})@if(!$loop->last)<br>@endif
+                                                @endforeach
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach
@@ -382,17 +423,27 @@
             @endif
 
             <div class="confirm-bar">
-                <p>กดยืนยันเฉพาะรายการที่พบชื่อตรงกันเท่านั้น ระบบจะตั้งสถานะเป็น <strong>ชำระแล้ว</strong> พร้อมอัปเดตจำนวนเงินและเลขที่ใบเสร็จ</p>
-                <form method="POST" action="{{ route('research-fee.payments.upload.confirm') }}" id="confirm-form">
-                    @csrf
-                    <input type="hidden" name="token" value="{{ $preview['token'] }}">
-                    <input type="hidden" name="term" value="{{ $preview['term'] }}">
-                    <input type="hidden" name="year" value="{{ $preview['year'] }}">
-                    <button class="btn btn-primary" type="submit" @disabled(empty($preview['matched'])) id="confirm-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5v5.2c0 4.4-2.9 7.8-8 9.3-5.1-1.5-8-4.9-8-9.3V7.5L12 3Z"/><path d="M9.2 12.1l1.8 1.8 3.8-3.8"/></svg>
-                        ยืนยันบันทึก {{ number_format(count($preview['matched'] ?? [])) }} รายการ
+                @if(!empty($preview['ambiguous']))
+                    <p>
+                        พบรายการชื่อหรือเลขที่ใบเสร็จซ้ำ จึง<strong>ยังไม่บันทึกข้อมูล</strong>
+                        กรุณาตรวจสอบไฟล์ให้ถูกต้อง แล้วอัปโหลดใหม่
+                    </p>
+                    <button class="btn btn-primary" type="button" disabled>
+                        ยังไม่สามารถบันทึกได้
                     </button>
-                </form>
+                @else
+                    <p>กดยืนยันเฉพาะรายการที่พบชื่อตรงกันเท่านั้น ระบบจะตั้งสถานะเป็น <strong>ชำระแล้ว</strong> พร้อมอัปเดตจำนวนเงินและเลขที่ใบเสร็จ</p>
+                    <form method="POST" action="{{ route('research-fee.payments.upload.confirm') }}" id="confirm-form">
+                        @csrf
+                        <input type="hidden" name="token" value="{{ $preview['token'] }}">
+                        <input type="hidden" name="term" value="{{ $preview['term'] }}">
+                        <input type="hidden" name="year" value="{{ $preview['year'] }}">
+                        <button class="btn btn-primary" type="submit" @disabled(empty($preview['matched'])) id="confirm-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5v5.2c0 4.4-2.9 7.8-8 9.3-5.1-1.5-8-4.9-8-9.3V7.5L12 3Z"/><path d="M9.2 12.1l1.8 1.8 3.8-3.8"/></svg>
+                            ยืนยันบันทึก {{ number_format(count($preview['matched'] ?? [])) }} รายการ
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
     @endif

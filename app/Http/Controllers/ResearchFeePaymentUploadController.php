@@ -56,18 +56,41 @@ class ResearchFeePaymentUploadController extends Controller
         session()->forget(self::RESULT_SESSION_KEY);
         session()->put(self::PREVIEW_SESSION_KEY, $preview);
 
-        return redirect()
-            ->route('research-fee.payments.upload', [
-                'term' => $data['term'],
-                'year' => $data['year'],
-            ])
-            ->with('success', sprintf(
-                'อ่านไฟล์สำเร็จ %d รายการ — พบตรงกัน %d, ไม่พบ %d, ชื่อซ้ำ %d',
-                $preview['total_rows'],
-                count($preview['matched']),
-                count($preview['unmatched']),
-                count($preview['ambiguous'])
-            ));
+        $ambiguousCount = count($preview['ambiguous'] ?? []);
+        $redirect = redirect()->route('research-fee.payments.upload', [
+            'term' => $data['term'],
+            'year' => $data['year'],
+        ]);
+
+        if ($ambiguousCount > 0) {
+            $details = collect($preview['ambiguous'])
+                ->map(function (array $row) {
+                    $name = trim((string) ($row['excel_name'] ?? '')) ?: '—';
+                    $slip = trim((string) ($row['slip_no'] ?? '')) ?: 'ไม่มีเลขที่ใบเสร็จ';
+
+                    return $name.' (ใบเสร็จ '.$slip.')';
+                })
+                ->unique()
+                ->values()
+                ->all();
+
+            $list = implode(', ', array_slice($details, 0, 8));
+            if (count($details) > 8) {
+                $list .= ' และอีก '.(count($details) - 8).' รายการ';
+            }
+
+            return $redirect->with(
+                'error',
+                'พบชื่อหรือเลขที่ใบเสร็จซ้ำ '.$ambiguousCount.' รายการ จึงยังไม่บันทึกข้อมูล กรุณาตรวจสอบ: '.$list
+            );
+        }
+
+        return $redirect->with('success', sprintf(
+            'อ่านไฟล์สำเร็จ %d รายการ — พบตรงกัน %d, ไม่พบ %d',
+            $preview['total_rows'],
+            count($preview['matched']),
+            count($preview['unmatched'])
+        ));
     }
 
     public function confirm(Request $request): RedirectResponse
@@ -84,6 +107,32 @@ class ResearchFeePaymentUploadController extends Controller
                     'year' => $request->input('year'),
                 ]))
                 ->with('error', 'ข้อมูลตรวจสอบหมดอายุหรือไม่ถูกต้อง กรุณาอัปโหลดไฟล์ใหม่');
+        }
+
+        if (! empty($preview['ambiguous']) || ! empty($preview['has_duplicates'])) {
+            $details = collect($preview['ambiguous'] ?? [])
+                ->map(function (array $row) {
+                    $name = trim((string) ($row['excel_name'] ?? '')) ?: '—';
+                    $slip = trim((string) ($row['slip_no'] ?? '')) ?: 'ไม่มีเลขที่ใบเสร็จ';
+
+                    return $name.' (ใบเสร็จ '.$slip.')';
+                })
+                ->unique()
+                ->values()
+                ->all();
+
+            $list = $details === [] ? '' : ': '.implode(', ', array_slice($details, 0, 8));
+
+            return redirect()
+                ->route('research-fee.payments.upload', [
+                    'term' => $preview['term'] ?? null,
+                    'year' => $preview['year'] ?? null,
+                ])
+                ->with(
+                    'error',
+                    'ยังไม่บันทึกข้อมูล เนื่องจากพบรายการชื่อหรือเลขที่ใบเสร็จซ้ำ'.$list
+                    .' กรุณาตรวจสอบไฟล์แล้วอัปโหลดใหม่'
+                );
         }
 
         if (($preview['matched'] ?? []) === []) {
