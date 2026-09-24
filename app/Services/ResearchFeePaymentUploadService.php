@@ -45,15 +45,10 @@ class ResearchFeePaymentUploadService
         $usedStdCodes = [];
 
         $nameCounts = [];
-        $slipCounts = [];
         foreach ($excelRows as $row) {
             $nameKey = $this->normalizeName($row['excel_name']);
             if ($nameKey !== '') {
                 $nameCounts[$nameKey] = ($nameCounts[$nameKey] ?? 0) + 1;
-            }
-            $slipNo = trim((string) ($row['slip_no'] ?? ''));
-            if ($slipNo !== '') {
-                $slipCounts[$slipNo] = ($slipCounts[$slipNo] ?? 0) + 1;
             }
         }
 
@@ -68,20 +63,12 @@ class ResearchFeePaymentUploadService
                 continue;
             }
 
-            $slipNo = trim((string) ($row['slip_no'] ?? ''));
-            $fileIssues = [];
+            // Duplicate first+last name within the same uploaded file only (not slip_no).
             if (($nameCounts[$key] ?? 0) > 1) {
-                $fileIssues[] = 'ชื่อซ้ำในไฟล์อัปโหลด';
-            }
-            if ($slipNo !== '' && ($slipCounts[$slipNo] ?? 0) > 1) {
-                $fileIssues[] = 'เลขที่ใบเสร็จซ้ำในไฟล์อัปโหลด';
-            }
-
-            if ($fileIssues !== []) {
                 $ambiguous[] = [
                     ...$row,
-                    'reason' => implode(' และ ', $fileIssues),
-                    'duplicate_type' => 'file',
+                    'reason' => 'ชื่อ-สกุลซ้ำในไฟล์เดียวกัน',
+                    'duplicate_type' => 'file_name',
                     'candidates' => [],
                 ];
 

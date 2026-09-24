@@ -265,7 +265,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v4M12 16h.01"/></svg>
             <div>
                 รูปแบบไฟล์ตามตัวอย่างค่าธรรมเนียมวิจัย: อ่านชื่อจากคอลัมน์ H, จำนวนเงินจากคอลัมน์ G, เลขที่ใบเสร็จจากคอลัมน์ C
-                แล้วจับคู่กับชื่อในระบบของปี/ภาคที่เลือก หากพบชื่อหรือเลขที่ใบเสร็จซ้ำ ระบบจะแจ้งรายละเอียดและยังไม่บันทึกข้อมูล
+                แล้วจับคู่กับชื่อในระบบของปี/ภาคที่เลือก หากพบชื่อ-สกุลซ้ำในไฟล์เดียวกัน ระบบจะแจ้งรายละเอียดและยังไม่บันทึกข้อมูล
             </div>
         </div>
     </div>
@@ -289,7 +289,7 @@
                 <div class="stat"><small>ทั้งหมดในไฟล์</small><strong>{{ number_format($preview['total_rows'] ?? 0) }}</strong></div>
                 <div class="stat ok"><small>พบชื่อตรงกัน</small><strong>{{ number_format(count($preview['matched'] ?? [])) }}</strong></div>
                 <div class="stat warn"><small>ไม่พบในระบบ</small><strong>{{ number_format(count($preview['unmatched'] ?? [])) }}</strong></div>
-                <div class="stat dup"><small>ชื่อ/ใบเสร็จซ้ำ</small><strong>{{ number_format(count($preview['ambiguous'] ?? [])) }}</strong></div>
+                <div class="stat dup"><small>ชื่อ-สกุลซ้ำ</small><strong>{{ number_format(count($preview['ambiguous'] ?? [])) }}</strong></div>
             </div>
 
             @if(!empty($preview['ambiguous']))
@@ -297,16 +297,18 @@
                     <div style="display:flex;gap:.5rem;align-items:flex-start">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:1.15rem;height:1.15rem;flex-shrink:0;margin-top:.05rem"><circle cx="12" cy="12" r="8"/><path d="M12 8v4M12 16h.01"/></svg>
                         <div>
-                            <strong>พบรายการซ้ำ — ระบบยังไม่บันทึกข้อมูลใด ๆ</strong>
+                            <strong>พบชื่อ-สกุลซ้ำ — ระบบยังไม่บันทึกข้อมูลใด ๆ</strong>
                             <div class="meta" style="margin-top:.2rem;color:#9a3412">
-                                กรุณาตรวจสอบชื่อและเลขที่ใบเสร็จด้านล่าง แล้วแก้ไขไฟล์ก่อนอัปโหลดใหม่
+                                กรุณาตรวจสอบชื่อ-สกุลด้านล่าง แล้วแก้ไขไฟล์ก่อนอัปโหลดใหม่
                             </div>
                             <ul class="dup-list">
                                 @foreach($preview['ambiguous'] as $row)
                                     <li>
-                                        ชื่อ <strong>{{ $row['excel_name'] ?: '—' }}</strong>
-                                        · เลขที่ใบเสร็จ <strong>{{ $row['slip_no'] ?: '—' }}</strong>
-                                        <span class="meta"> — {{ $row['reason'] ?? 'รายการซ้ำ' }}</span>
+                                        ชื่อ-สกุล <strong>{{ $row['excel_name'] ?: '—' }}</strong>
+                                        @if(!empty($row['slip_no']))
+                                            · ใบเสร็จ {{ $row['slip_no'] }}
+                                        @endif
+                                        <span class="meta"> — {{ $row['reason'] ?? 'ชื่อซ้ำ' }}</span>
                                     </li>
                                 @endforeach
                             </ul>
@@ -386,7 +388,7 @@
 
             @if(!empty($preview['ambiguous']))
                 <div class="section-gap">
-                    <h3 style="font:700 1rem 'Outfit','Sarabun',sans-serif;margin-bottom:.55rem;color:#c2410c">รายละเอียดรายการซ้ำ — ไม่บันทึก</h3>
+                    <h3 style="font:700 1rem 'Outfit','Sarabun',sans-serif;margin-bottom:.55rem;color:#c2410c">รายละเอียดชื่อ-สกุลซ้ำ — ไม่บันทึก</h3>
                     <div class="table-wrap">
                         <table>
                             <thead>
@@ -425,7 +427,7 @@
             <div class="confirm-bar">
                 @if(!empty($preview['ambiguous']))
                     <p>
-                        พบรายการชื่อหรือเลขที่ใบเสร็จซ้ำ จึง<strong>ยังไม่บันทึกข้อมูล</strong>
+                        พบชื่อ-สกุลซ้ำในไฟล์ จึง<strong>ยังไม่บันทึกข้อมูล</strong>
                         กรุณาตรวจสอบไฟล์ให้ถูกต้อง แล้วอัปโหลดใหม่
                     </p>
                     <button class="btn btn-primary" type="button" disabled>

@@ -81,7 +81,7 @@ class ResearchFeePaymentUploadController extends Controller
 
             return $redirect->with(
                 'error',
-                'พบชื่อหรือเลขที่ใบเสร็จซ้ำ '.$ambiguousCount.' รายการ จึงยังไม่บันทึกข้อมูล กรุณาตรวจสอบ: '.$list
+                'พบชื่อ-สกุลซ้ำในไฟล์ '.$ambiguousCount.' รายการ จึงยังไม่บันทึกข้อมูล กรุณาตรวจสอบ: '.$list
             );
         }
 
@@ -130,7 +130,7 @@ class ResearchFeePaymentUploadController extends Controller
                 ])
                 ->with(
                     'error',
-                    'ยังไม่บันทึกข้อมูล เนื่องจากพบรายการชื่อหรือเลขที่ใบเสร็จซ้ำ'.$list
+                    'ยังไม่บันทึกข้อมูล เนื่องจากพบชื่อ-สกุลซ้ำ'.$list
                     .' กรุณาตรวจสอบไฟล์แล้วอัปโหลดใหม่'
                 );
         }
