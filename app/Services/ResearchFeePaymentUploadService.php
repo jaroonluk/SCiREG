@@ -14,7 +14,8 @@ class ResearchFeePaymentUploadService
 {
     private const EXCLUDED_DEPARTMENT_ID = 7;
 
-    private const TITLE_PATTERN = '/^(นางสาว|นาง|นาย|เด็กชาย|เด็กหญิง|mr\.?|mrs\.?|miss|ms\.?)\s*/iu';
+    /** Titles longest-first so นางสาว / น.ส. win over นาง / น. */
+    private const TITLE_PATTERN = '/^(?:นางสาว|น\.?\s*ส\.?|นาย|นาง|เด็กชาย|เด็กหญิง|ด\.?\s*ช\.?|ด\.?\s*ญ\.?|mr\.?|mrs\.?|miss|ms\.?)\s*/iu';
 
     /**
      * Upload Excel to MinIO and return a preview of matched/unmatched rows.
@@ -41,6 +42,7 @@ class ResearchFeePaymentUploadService
         $matched = [];
         $unmatched = [];
         $ambiguous = [];
+        $usedStdCodes = [];
 
         foreach ($excelRows as $row) {
             $key = $this->normalizeName($row['excel_name']);
@@ -53,7 +55,12 @@ class ResearchFeePaymentUploadService
                 continue;
             }
 
-            $candidates = $indexed[$key] ?? [];
+            $candidates = $this->findCandidates($row['excel_name'], $students, $indexed);
+            $candidates = array_values(array_filter(
+                $candidates,
+                fn (object $s) => ! isset($usedStdCodes[(string) $s->std_code])
+            ));
+
             if ($candidates === []) {
                 $unmatched[] = [
                     ...$row,
@@ -78,6 +85,7 @@ class ResearchFeePaymentUploadService
             }
 
             $student = $candidates[0];
+            $usedStdCodes[(string) $student->std_code] = true;
             $matched[] = [
                 ...$row,
                 'std_code' => $student->std_code,
@@ -256,16 +264,16 @@ class ResearchFeePaymentUploadService
             return false;
         }
 
-        return (bool) preg_match('/^(นางสาว|นาง|นาย|เด็กชาย|เด็กหญิง)\s*\S+/u', $name);
+        return (bool) preg_match('/^(?:นางสาว|น\.?\s*ส\.?|นาย|นาง|เด็กชาย|เด็กหญิง)\s*\S+/u', $name);
     }
 
     private function extractPersonName(string $text): ?string
     {
-        if (preg_match('/\(((?:นางสาว|นาง|นาย)\s*[^)]+)\)/u', $text, $m)) {
+        if (preg_match('/\(((?:นางสาว|น\.?\s*ส\.?|นาย|นาง)\s*[^)]+)\)/u', $text, $m)) {
             return trim(preg_replace('/\s+/u', ' ', $m[1]) ?? $m[1]);
         }
 
-        if (preg_match('/((?:นางสาว|นาง|นาย)\s+\S+(?:\s+\S+){1,3})/u', $text, $m)) {
+        if (preg_match('/((?:นางสาว|น\.?\s*ส\.?|นาย|นาง)\s*\S+(?:\s+\S+){1,3})/u', $text, $m)) {
             return trim(preg_replace('/\s+/u', ' ', $m[1]) ?? $m[1]);
         }
 
@@ -317,23 +325,140 @@ class ResearchFeePaymentUploadService
         $index = [];
 
         foreach ($students as $student) {
-            $key = $this->normalizeName((string) ($student->name ?? ''));
-            if ($key === '') {
-                continue;
+            foreach ($this->matchKeys((string) ($student->name ?? '')) as $key) {
+                $index[$key][] = $student;
             }
+        }
 
-            $index[$key][] = $student;
+        foreach ($index as $key => $list) {
+            $unique = [];
+            foreach ($list as $student) {
+                $unique[(string) $student->std_code] = $student;
+            }
+            $index[$key] = array_values($unique);
         }
 
         return $index;
     }
 
+    /**
+     * @param  Collection<int, object>  $students
+     * @param  array<string, list<object>>  $indexed
+     * @return list<object>
+     */
+    private function findCandidates(string $excelName, Collection $students, array $indexed): array
+    {
+        $found = [];
+
+        foreach ($this->matchKeys($excelName) as $key) {
+            foreach ($indexed[$key] ?? [] as $student) {
+                $found[(string) $student->std_code] = $student;
+            }
+        }
+
+        if ($found !== []) {
+            return array_values($found);
+        }
+
+        $excelKey = $this->normalizeName($excelName);
+        $tokens = $this->nameTokens($excelName);
+        if ($excelKey === '' && $tokens === []) {
+            return [];
+        }
+
+        foreach ($students as $student) {
+            $dbKey = $this->normalizeName((string) ($student->name ?? ''));
+            if ($dbKey === '') {
+                continue;
+            }
+
+            if ($excelKey !== '' && ($excelKey === $dbKey || str_contains($dbKey, $excelKey) || str_contains($excelKey, $dbKey))) {
+                $found[(string) $student->std_code] = $student;
+
+                continue;
+            }
+
+            if (count($tokens) >= 2) {
+                $allPresent = true;
+                foreach ($tokens as $token) {
+                    if (! str_contains($dbKey, $token)) {
+                        $allPresent = false;
+                        break;
+                    }
+                }
+                if ($allPresent) {
+                    $found[(string) $student->std_code] = $student;
+                }
+            }
+        }
+
+        return array_values($found);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function matchKeys(string $name): array
+    {
+        $keys = [];
+        $normalized = $this->normalizeName($name);
+        if ($normalized !== '') {
+            $keys[] = $normalized;
+        }
+
+        $tokens = $this->nameTokens($name);
+        if (count($tokens) >= 2) {
+            $keys[] = implode('', $tokens);
+            $keys[] = $tokens[0].'|'.$tokens[count($tokens) - 1];
+        }
+
+        return array_values(array_unique($keys));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function nameTokens(string $name): array
+    {
+        $name = $this->cleanName($name);
+        $name = preg_replace(self::TITLE_PATTERN, '', $name) ?? $name;
+        $parts = preg_split('/\s+/u', trim($name)) ?: [];
+
+        $tokens = [];
+        foreach ($parts as $part) {
+            $token = $this->normalizeName($part);
+            if ($token !== '' && mb_strlen($token) >= 2) {
+                $tokens[] = $token;
+            }
+        }
+
+        return array_values(array_unique($tokens));
+    }
+
     public function normalizeName(string $name): string
     {
-        $name = trim(preg_replace('/\s+/u', ' ', $name) ?? '');
-        $name = preg_replace(self::TITLE_PATTERN, '', $name) ?? $name;
-        $name = preg_replace('/\s+/u', '', $name) ?? $name;
+        $name = $this->cleanName($name);
+        // Strip titles repeatedly (e.g. "น.ส. นางสาว...")
+        for ($i = 0; $i < 3; $i++) {
+            $next = preg_replace(self::TITLE_PATTERN, '', $name) ?? $name;
+            if ($next === $name) {
+                break;
+            }
+            $name = trim($next);
+        }
+
+        // Keep Thai combining marks (\p{M}) so สระ/วรรณยุกต์ are not stripped.
+        $name = preg_replace('/[^\p{L}\p{N}\p{M}]+/u', '', $name) ?? $name;
 
         return mb_strtolower($name);
+    }
+
+    private function cleanName(string $name): string
+    {
+        $name = str_replace("\u{00A0}", ' ', $name);
+        $name = preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $name) ?? $name;
+        $name = trim(preg_replace('/\s+/u', ' ', $name) ?? '');
+
+        return $name;
     }
 }
