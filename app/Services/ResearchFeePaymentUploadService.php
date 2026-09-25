@@ -536,6 +536,14 @@ class ResearchFeePaymentUploadService
             }
         }
 
+        // e.g. เทอม 2 ปีการศึกษา 2568 / เทอม 1 ปีการศึกษา 2569
+        if (preg_match_all('/เทอม\s*([12])\s*ปี(?:การศึกษา)?\s*(25\d{2})/u', $text, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $m) {
+                $key = $m[1].'|'.$m[2];
+                $found[$key] = ['term' => (int) $m[1], 'year' => (int) $m[2]];
+            }
+        }
+
         // e.g. ภาคต้น ปี 2568 / ภาคปลาย ปีการศึกษา 2567 / ภาคการศึกษาปลาย ปีการศึกษา 2568
         if (preg_match_all('/ภาค(?:การศึกษา)?\s*(ต้น|ปลาย).*?ปี(?:การศึกษา)?\s*(25\d{2})/u', $text, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $m) {
@@ -670,13 +678,15 @@ class ResearchFeePaymentUploadService
         $index = [];
 
         foreach ($students as $student) {
-            $code = $this->normalizeStdCode((string) ($student->std_code ?? ''));
-            if ($code === '') {
-                continue;
+            $rawCode = (string) ($student->std_code ?? '');
+            $term = (int) $student->term;
+            $year = (int) $student->year;
+
+            foreach ($this->stdCodeVariants($rawCode) as $code) {
+                $key = $code.'|'.$term.'|'.$year;
+                $index[$key][] = $student;
+                $index[$code][] = $student;
             }
-            $key = $code.'|'.$student->term.'|'.$student->year;
-            $index[$key][] = $student;
-            $index[$code][] = $student;
         }
 
         return $index;
@@ -689,26 +699,65 @@ class ResearchFeePaymentUploadService
      */
     private function findCandidatesForRow(array $row, Collection $students, array $byCode): array
     {
-        $term = (string) $row['term'];
-        $year = (string) $row['year'];
+        $term = (int) $row['term'];
+        $year = (int) $row['year'];
         $stdCode = $this->normalizeStdCode((string) ($row['excel_std_code'] ?? ''));
 
         if ($stdCode !== '') {
-            $exactKey = $stdCode.'|'.$term.'|'.$year;
-            if (! empty($byCode[$exactKey])) {
-                return $this->uniqueStudents($byCode[$exactKey]);
+            foreach ($this->stdCodeVariants($stdCode) as $variant) {
+                $exactKey = $variant.'|'.$term.'|'.$year;
+                if (! empty($byCode[$exactKey])) {
+                    return $this->uniqueStudents($byCode[$exactKey]);
+                }
             }
 
-            // Code found but wrong term/year — still return empty so unmatched reason is clear.
+            // Code present but no exact term/year hit — try name within term/year
+            // in case the stored student code format differs slightly.
+            $scoped = $students->filter(
+                fn (object $s) => (int) $s->term === $term && (int) $s->year === $year
+            );
+            $byName = $this->findCandidates(
+                $row['excel_name'],
+                $scoped,
+                $this->indexStudentsByNormalizedName($scoped)
+            );
+            if ($byName !== []) {
+                return $byName;
+            }
+
             return [];
         }
 
         // No student code: match by name within term/year.
         $scoped = $students->filter(
-            fn (object $s) => (string) $s->term === $term && (string) $s->year === $year
+            fn (object $s) => (int) $s->term === $term && (int) $s->year === $year
         );
 
         return $this->findCandidates($row['excel_name'], $scoped, $this->indexStudentsByNormalizedName($scoped));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function stdCodeVariants(string $code): array
+    {
+        $code = $this->normalizeStdCode($code);
+        if ($code === '') {
+            return [];
+        }
+
+        $variants = [$code];
+        $digits = preg_replace('/\D+/', '', $code) ?? '';
+        if ($digits !== '' && $digits !== $code) {
+            $variants[] = $digits;
+        }
+
+        // KKU style: 9 digits + check digit => 675020074-6
+        if (preg_match('/^(\d{9})(\d)$/', $digits, $m)) {
+            $variants[] = $m[1].'-'.$m[2];
+        }
+
+        return array_values(array_unique($variants));
     }
 
     /**
