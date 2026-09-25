@@ -66,9 +66,10 @@ class ResearchFeePaymentUploadController extends Controller
             $details = collect($preview['ambiguous'])
                 ->map(function (array $row) {
                     $name = trim((string) ($row['excel_name'] ?? '')) ?: '—';
-                    $slip = trim((string) ($row['slip_no'] ?? '')) ?: 'ไม่มีเลขที่ใบเสร็จ';
+                    $code = trim((string) ($row['excel_std_code'] ?? '')) ?: 'ไม่มีรหัส';
+                    $termYear = trim((string) ($row['term_year_label'] ?? '')) ?: '—';
 
-                    return $name.' (ใบเสร็จ '.$slip.')';
+                    return $name.' ('.$code.' · '.$termYear.')';
                 })
                 ->unique()
                 ->values()
@@ -79,17 +80,31 @@ class ResearchFeePaymentUploadController extends Controller
                 $list .= ' และอีก '.(count($details) - 8).' รายการ';
             }
 
+            $groupLabels = collect($preview['term_groups'] ?? [])
+                ->pluck('label')
+                ->filter()
+                ->implode(', ');
+
             return $redirect->with(
                 'error',
-                'พบชื่อ-สกุลซ้ำในไฟล์ '.$ambiguousCount.' รายการ จึงยังไม่บันทึกข้อมูล กรุณาตรวจสอบ: '.$list
+                'พบรายการซ้ำ (ภาค/ปี + รหัส + ชื่อ) '.$ambiguousCount.' รายการ จึงยังไม่บันทึก'
+                .($groupLabels !== '' ? ' — ภาคที่จะอัปเดต: '.$groupLabels : '')
+                .' กรุณาตรวจสอบ: '.$list
             );
         }
 
+        $groupLabels = collect($preview['term_groups'] ?? [])
+            ->map(function (array $g) {
+                return ($g['label'] ?? '—').' (อัปเดต '.($g['matched_count'] ?? 0).')';
+            })
+            ->implode(', ');
+
         return $redirect->with('success', sprintf(
-            'อ่านไฟล์สำเร็จ %d รายการ — พบตรงกัน %d, ไม่พบ %d',
+            'อ่านไฟล์สำเร็จ %d รายการ — จะอัปเดต %d, ไม่พบ %d%s',
             $preview['total_rows'],
             count($preview['matched']),
-            count($preview['unmatched'])
+            count($preview['unmatched']),
+            $groupLabels !== '' ? ' · ภาค: '.$groupLabels : ''
         ));
     }
 
@@ -113,9 +128,10 @@ class ResearchFeePaymentUploadController extends Controller
             $details = collect($preview['ambiguous'] ?? [])
                 ->map(function (array $row) {
                     $name = trim((string) ($row['excel_name'] ?? '')) ?: '—';
-                    $slip = trim((string) ($row['slip_no'] ?? '')) ?: 'ไม่มีเลขที่ใบเสร็จ';
+                    $code = trim((string) ($row['excel_std_code'] ?? '')) ?: 'ไม่มีรหัส';
+                    $termYear = trim((string) ($row['term_year_label'] ?? '')) ?: '—';
 
-                    return $name.' (ใบเสร็จ '.$slip.')';
+                    return $name.' ('.$code.' · '.$termYear.')';
                 })
                 ->unique()
                 ->values()
@@ -130,7 +146,7 @@ class ResearchFeePaymentUploadController extends Controller
                 ])
                 ->with(
                     'error',
-                    'ยังไม่บันทึกข้อมูล เนื่องจากพบชื่อ-สกุลซ้ำ'.$list
+                    'ยังไม่บันทึกข้อมูล เนื่องจากพบรายการซ้ำ (ภาค/ปี + รหัสนักศึกษา + ชื่อเดียวกัน)'.$list
                     .' กรุณาตรวจสอบไฟล์แล้วอัปโหลดใหม่'
                 );
         }

@@ -125,8 +125,82 @@
     .stat.warn strong { color: #9a3412; }
     .stat.muted strong { color: #475569; }
 
+    .term-overview {
+        margin: 0 0 1.15rem;
+        padding: 1rem;
+        border-radius: 1rem;
+        border: 1px solid rgba(201,146,26,.22);
+        background: linear-gradient(165deg, rgba(255,252,240,.95), rgba(255,246,214,.55));
+    }
+    .term-overview-head {
+        display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
+        margin-bottom: .75rem;
+    }
+    .term-overview-head h3 {
+        margin: 0; font: 700 .98rem 'Outfit','Sarabun',sans-serif; color: var(--champaca-deep);
+    }
+    .term-overview-head .meta { margin: 0; }
+    .term-chip-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .65rem;
+    }
+    .term-chip {
+        display: grid; gap: .35rem; text-decoration: none; color: inherit;
+        padding: .75rem .85rem; border-radius: .9rem;
+        border: 1px solid rgba(201,146,26,.25); background: #fffef9;
+        transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+    }
+    .term-chip:hover {
+        border-color: var(--champaca); box-shadow: 0 8px 18px -14px rgba(150,100,10,.55);
+        transform: translateY(-1px);
+    }
+    .term-chip .chip-title {
+        font: 700 1rem 'Outfit','Sarabun',sans-serif; color: var(--champaca-deep);
+    }
+    .term-chip .chip-stats {
+        display: flex; flex-wrap: wrap; gap: .35rem .65rem; font-size: .78rem; color: var(--ink-muted);
+    }
+    .term-chip .chip-stats b { font-weight: 700; color: var(--ink); }
+    .term-chip .chip-stats .ok { color: #166534; }
+    .term-chip .chip-stats .warn { color: #9a3412; }
+    .term-chip .chip-stats .dup { color: #c2410c; }
+    .term-chip .chip-amount {
+        font-variant-numeric: tabular-nums; font-size: .82rem; color: var(--ink-muted);
+    }
+
+    .term-block {
+        margin-top: 1.15rem; padding-top: 1rem;
+        border-top: 1px dashed rgba(201,146,26,.28);
+        scroll-margin-top: 1.25rem;
+    }
+    .term-block:first-of-type { margin-top: .35rem; }
+    .term-block-head {
+        display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
+        margin-bottom: .7rem;
+    }
+    .term-block-head h3 {
+        margin: 0; font: 700 1.05rem 'Outfit','Sarabun',sans-serif;
+        display: inline-flex; align-items: center; gap: .45rem;
+    }
+    .term-pill {
+        display: inline-flex; align-items: center; gap: .3rem;
+        padding: .2rem .55rem; border-radius: .55rem;
+        background: rgba(230,180,34,.16); color: var(--champaca-deep);
+        border: 1px solid rgba(201,146,26,.28); font-size: .78rem; font-weight: 700;
+    }
+    .term-block-meta {
+        display: flex; flex-wrap: wrap; gap: .4rem .75rem;
+        font-size: .8rem; color: var(--ink-muted);
+    }
+    .term-block-meta strong { color: var(--ink); font-weight: 700; }
+    .subtable-title {
+        font: 700 .92rem 'Outfit','Sarabun',sans-serif;
+        margin: .85rem 0 .45rem;
+    }
+    .subtable-title.warn { color: #9a3412; }
+    .subtable-title.dup { color: #c2410c; }
+
     .table-wrap { overflow-x: auto; margin: 0 -.2rem; }
-    table { width: 100%; border-collapse: collapse; min-width: 860px; }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; }
     th, td {
         padding: .65rem .55rem; border-bottom: 1px solid rgba(201,146,26,.12);
         text-align: left; vertical-align: top; font-size: .88rem;
@@ -165,7 +239,7 @@
             </div>
             <div>
                 <h1>อัปโหลดไฟล์ชำระค่าธรรมเนียม</h1>
-                <p>เลือกปี/ภาคการศึกษา แล้วอัปโหลดไฟล์ Excel เพื่อจับคู่ชื่อนักศึกษาและตรวจยอดก่อนบันทึก</p>
+                <p>อัปโหลดไฟล์ Excel แล้วระบบจะอ่านรหัส/ชื่อ ภาค/ปี จำนวนเงิน และเลขที่ใบเสร็จ แล้วแสดงรายการก่อนให้ยืนยันบันทึก</p>
             </div>
         </div>
     </div>
@@ -219,7 +293,7 @@
             </div>
             <div>
                 <h2>1) อัปโหลดและตรวจสอบ</h2>
-                <span class="sub">ระบบจะอัปโหลดไฟล์ไป MinIO แล้วจับคู่ชื่อกับฐานค่าธรรมเนียมตามปี/ภาคที่เลือก</span>
+                <span class="sub">ปี/ภาคในฟอร์มใช้เป็นค่าสำรองเมื่ออ่านจากไฟล์ไม่ได้ — ระบบจับคู่จากรหัสนักศึกษา + ภาค/ปี + ชื่อ</span>
             </div>
         </div>
 
@@ -228,7 +302,7 @@
             <div class="field">
                 <label>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
-                    ปีการศึกษา
+                    ปีการศึกษา (สำรอง)
                 </label>
                 <select name="year" required>
                     @foreach($years as $y)
@@ -239,7 +313,7 @@
             <div class="field">
                 <label>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 1.5"/></svg>
-                    ภาคการศึกษา
+                    ภาคการศึกษา (สำรอง)
                 </label>
                 <select name="term" required>
                     <option value="1" @selected((int)$term === 1)>ต้น</option>
@@ -264,13 +338,17 @@
         <div class="hint">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v4M12 16h.01"/></svg>
             <div>
-                รูปแบบไฟล์ตามตัวอย่างค่าธรรมเนียมวิจัย: อ่านชื่อจากคอลัมน์ H, จำนวนเงินจากคอลัมน์ G, เลขที่ใบเสร็จจากคอลัมน์ C
-                แล้วจับคู่กับชื่อในระบบของปี/ภาคที่เลือก หากพบชื่อ-สกุลซ้ำในไฟล์เดียวกัน ระบบจะแจ้งรายละเอียดและยังไม่บันทึกข้อมูล
+                รูปแบบไฟล์: คอลัมน์ H = ชื่อและรหัสนักศึกษา, G = จำนวนเงิน, C = เลขที่ใบเสร็จ, D = ภาคการศึกษา/ปี
+                ถือว่าซ้ำเมื่ออยู่ในภาค/ปีเดียวกัน และมีรหัสนักศึกษา + ชื่อเดียวกัน — ระบบจะแสดงผลแยกตามภาค/ปีก่อนให้ยืนยันบันทึก
             </div>
         </div>
     </div>
 
     @if($preview)
+        @php
+            $termGroups = $preview['term_groups'] ?? [];
+            $hasAmbiguous = !empty($preview['ambiguous']);
+        @endphp
         <div class="panel">
             <div class="panel-head">
                 <div class="step-badge" aria-hidden="true">
@@ -280,35 +358,62 @@
                     <h2>2) ตรวจรายการก่อนบันทึก</h2>
                     <span class="sub">
                         ไฟล์ {{ $preview['original_name'] ?? '—' }}
-                        · ภาค {{ (int)$preview['term'] === 1 ? 'ต้น' : 'ปลาย' }}/{{ $preview['year'] }}
+                        · แบ่งตามภาค/ปีที่อ่านจากไฟล์
                     </span>
                 </div>
             </div>
 
             <div class="summary">
                 <div class="stat"><small>ทั้งหมดในไฟล์</small><strong>{{ number_format($preview['total_rows'] ?? 0) }}</strong></div>
-                <div class="stat ok"><small>พบชื่อตรงกัน</small><strong>{{ number_format(count($preview['matched'] ?? [])) }}</strong></div>
-                <div class="stat warn"><small>ไม่พบในระบบ</small><strong>{{ number_format(count($preview['unmatched'] ?? [])) }}</strong></div>
-                <div class="stat dup"><small>ชื่อ-สกุลซ้ำ</small><strong>{{ number_format(count($preview['ambiguous'] ?? [])) }}</strong></div>
+                <div class="stat ok"><small>จะอัปเดต</small><strong>{{ number_format(count($preview['matched'] ?? [])) }}</strong></div>
+                <div class="stat warn"><small>ไม่พบในฐานข้อมูล</small><strong>{{ number_format(count($preview['unmatched'] ?? [])) }}</strong></div>
+                <div class="stat dup"><small>รายการซ้ำ</small><strong>{{ number_format(count($preview['ambiguous'] ?? [])) }}</strong></div>
             </div>
 
-            @if(!empty($preview['ambiguous']))
-                <div class="alert alert-warn section-gap" role="alert" style="margin-bottom:1rem">
+            @if(!empty($termGroups))
+                <div class="term-overview">
+                    <div class="term-overview-head">
+                        <h3>ภาคการศึกษา / ปีการศึกษา ที่จะอัปเดต</h3>
+                        <p class="meta">พบ {{ number_format(count($termGroups)) }} ภาค — กดเพื่อไปดูรายละเอียด</p>
+                    </div>
+                    <div class="term-chip-grid">
+                        @foreach($termGroups as $group)
+                            <a class="term-chip" href="#{{ $group['anchor'] }}">
+                                <div class="chip-title">ภาค{{ $group['label'] }}</div>
+                                <div class="chip-stats">
+                                    <span class="ok">อัปเดต <b>{{ number_format($group['matched_count']) }}</b></span>
+                                    <span class="warn">ไม่พบ <b>{{ number_format($group['unmatched_count']) }}</b></span>
+                                    @if(($group['ambiguous_count'] ?? 0) > 0)
+                                        <span class="dup">ซ้ำ <b>{{ number_format($group['ambiguous_count']) }}</b></span>
+                                    @endif
+                                </div>
+                                <div class="chip-amount">
+                                    ยอดที่จะอัปเดต {{ number_format((float)$group['matched_amount'], 2) }} บาท
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            @if($hasAmbiguous)
+                <div class="alert alert-warn" role="alert" style="margin-bottom:1rem">
                     <div style="display:flex;gap:.5rem;align-items:flex-start">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:1.15rem;height:1.15rem;flex-shrink:0;margin-top:.05rem"><circle cx="12" cy="12" r="8"/><path d="M12 8v4M12 16h.01"/></svg>
                         <div>
-                            <strong>พบชื่อ-สกุลซ้ำ — ระบบยังไม่บันทึกข้อมูลใด ๆ</strong>
+                            <strong>พบรายการซ้ำ — ระบบยังไม่บันทึกข้อมูลใด ๆ</strong>
                             <div class="meta" style="margin-top:.2rem;color:#9a3412">
-                                กรุณาตรวจสอบชื่อ-สกุลด้านล่าง แล้วแก้ไขไฟล์ก่อนอัปโหลดใหม่
+                                ถือว่าซ้ำเมื่ออยู่ในภาค/ปีเดียวกัน และมีรหัสนักศึกษา + ชื่อเดียวกัน
                             </div>
                             <ul class="dup-list">
                                 @foreach($preview['ambiguous'] as $row)
                                     <li>
-                                        ชื่อ-สกุล <strong>{{ $row['excel_name'] ?: '—' }}</strong>
-                                        @if(!empty($row['slip_no']))
-                                            · ใบเสร็จ {{ $row['slip_no'] }}
+                                        <strong>{{ $row['excel_name'] ?: '—' }}</strong>
+                                        @if(!empty($row['excel_std_code']))
+                                            · {{ $row['excel_std_code'] }}
                                         @endif
-                                        <span class="meta"> — {{ $row['reason'] ?? 'ชื่อซ้ำ' }}</span>
+                                        · {{ $row['term_year_label'] ?? '—' }}
+                                        <span class="meta"> — {{ $row['reason'] ?? 'รายการซ้ำ' }}</span>
                                     </li>
                                 @endforeach
                             </ul>
@@ -317,124 +422,153 @@
                 </div>
             @endif
 
-            <h3 style="font:700 1rem 'Outfit','Sarabun',sans-serif;margin-bottom:.55rem">
-                @if(!empty($preview['ambiguous']))
-                    รายการที่จับคู่ได้ (ยังไม่บันทึก จนกว่าจะไม่มีรายการซ้ำ)
-                @else
-                    รายการที่จะอัปเดต
-                @endif
-            </h3>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>รหัสนักศึกษา</th>
-                            <th>ชื่อนักศึกษา</th>
-                            <th>สาขาวิชา</th>
-                            <th class="num">จำนวนเงิน</th>
-                            <th>เลขที่ใบเสร็จ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse(($preview['matched'] ?? []) as $i => $row)
-                            <tr>
-                                <td>{{ $i + 1 }}</td>
-                                <td>{{ $row['std_code'] }}</td>
-                                <td>
-                                    <strong>{{ $row['name'] }}</strong>
-                                    <div class="meta">จากไฟล์: {{ $row['excel_name'] }}</div>
-                                </td>
-                                <td>{{ $row['depart_name'] ?: '—' }}</td>
-                                <td class="num">{{ number_format((float)$row['amount'], 2) }}</td>
-                                <td>{{ $row['slip_no'] ?: '—' }}</td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="6" class="empty">ไม่มีรายการที่จับคู่ได้</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+            @forelse($termGroups as $group)
+                <section class="term-block" id="{{ $group['anchor'] }}">
+                    <div class="term-block-head">
+                        <h3>
+                            <span class="term-pill">ภาค{{ $group['label'] }}</span>
+                        </h3>
+                        <div class="term-block-meta">
+                            <span>อัปเดต <strong>{{ number_format($group['matched_count']) }}</strong></span>
+                            <span>ไม่พบ <strong>{{ number_format($group['unmatched_count']) }}</strong></span>
+                            @if(($group['ambiguous_count'] ?? 0) > 0)
+                                <span>ซ้ำ <strong>{{ number_format($group['ambiguous_count']) }}</strong></span>
+                            @endif
+                            <span>ยอดอัปเดต <strong>{{ number_format((float)$group['matched_amount'], 2) }}</strong> บาท</span>
+                        </div>
+                    </div>
 
-            @if(!empty($preview['unmatched']))
-                <div class="section-gap">
-                    <h3 style="font:700 1rem 'Outfit','Sarabun',sans-serif;margin-bottom:.55rem;color:#9a3412">ไม่พบชื่อในระบบ</h3>
+                    <div class="subtable-title">
+                        @if($hasAmbiguous)
+                            รายการที่จับคู่ได้ (ยังไม่บันทึก จนกว่าจะไม่มีรายการซ้ำ)
+                        @else
+                            รายการที่จะอัปเดต
+                        @endif
+                    </div>
                     <div class="table-wrap">
                         <table>
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>ชื่อในไฟล์</th>
+                                    <th>รหัสนักศึกษา</th>
+                                    <th>ชื่อนักศึกษา</th>
+                                    <th>สาขาวิชา</th>
                                     <th class="num">จำนวนเงิน</th>
                                     <th>เลขที่ใบเสร็จ</th>
-                                    <th>หมายเหตุ</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($preview['unmatched'] as $i => $row)
+                                @forelse($group['matched'] as $i => $row)
                                     <tr>
                                         <td>{{ $i + 1 }}</td>
-                                        <td>{{ $row['excel_name'] }}</td>
+                                        <td>{{ $row['std_code'] }}</td>
+                                        <td>
+                                            <strong>{{ $row['name'] }}</strong>
+                                            <div class="meta">
+                                                จากไฟล์: {{ $row['excel_name'] }}
+                                                @if(!empty($row['excel_std_code']))
+                                                    · {{ $row['excel_std_code'] }}
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td>{{ $row['depart_name'] ?: '—' }}</td>
                                         <td class="num">{{ number_format((float)$row['amount'], 2) }}</td>
                                         <td>{{ $row['slip_no'] ?: '—' }}</td>
-                                        <td class="meta">{{ $row['reason'] ?? 'ไม่พบ' }}</td>
                                     </tr>
-                                @endforeach
+                                @empty
+                                    <tr><td colspan="6" class="empty">ไม่มีรายการที่จะอัปเดตในภาคนี้</td></tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
-                </div>
-            @endif
 
-            @if(!empty($preview['ambiguous']))
-                <div class="section-gap">
-                    <h3 style="font:700 1rem 'Outfit','Sarabun',sans-serif;margin-bottom:.55rem;color:#c2410c">รายละเอียดชื่อ-สกุลซ้ำ — ไม่บันทึก</h3>
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>ชื่อในไฟล์</th>
-                                    <th class="num">จำนวนเงิน</th>
-                                    <th>เลขที่ใบเสร็จ</th>
-                                    <th>สาเหตุ / รายการในระบบ</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($preview['ambiguous'] as $i => $row)
+                    @if(!empty($group['unmatched']))
+                        <div class="subtable-title warn">ไม่พบในฐานข้อมูล — ภาค{{ $group['label'] }}</div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
                                     <tr>
-                                        <td>{{ $i + 1 }}</td>
-                                        <td><strong>{{ $row['excel_name'] }}</strong></td>
-                                        <td class="num">{{ number_format((float)$row['amount'], 2) }}</td>
-                                        <td><strong>{{ $row['slip_no'] ?: '—' }}</strong></td>
-                                        <td class="meta">
-                                            {{ $row['reason'] ?? 'รายการซ้ำ' }}
-                                            @if(!empty($row['candidates']))
-                                                <br>
-                                                @foreach($row['candidates'] as $c)
-                                                    {{ $c['std_code'] }} {{ $c['name'] }} ({{ $c['depart_name'] ?: '—' }})@if(!$loop->last)<br>@endif
-                                                @endforeach
-                                            @endif
-                                        </td>
+                                        <th>#</th>
+                                        <th>รหัสในไฟล์</th>
+                                        <th>ชื่อในไฟล์</th>
+                                        <th class="num">จำนวนเงิน</th>
+                                        <th>เลขที่ใบเสร็จ</th>
+                                        <th>หมายเหตุ</th>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            @endif
+                                </thead>
+                                <tbody>
+                                    @foreach($group['unmatched'] as $i => $row)
+                                        <tr>
+                                            <td>{{ $i + 1 }}</td>
+                                            <td>{{ $row['excel_std_code'] ?: '—' }}</td>
+                                            <td>{{ $row['excel_name'] }}</td>
+                                            <td class="num">{{ number_format((float)$row['amount'], 2) }}</td>
+                                            <td>{{ $row['slip_no'] ?: '—' }}</td>
+                                            <td class="meta">{{ $row['reason'] ?? 'ไม่พบ' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+
+                    @if(!empty($group['ambiguous']))
+                        <div class="subtable-title dup">รายการซ้ำ — ภาค{{ $group['label'] }} (ไม่บันทึก)</div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>รหัสในไฟล์</th>
+                                        <th>ชื่อในไฟล์</th>
+                                        <th class="num">จำนวนเงิน</th>
+                                        <th>เลขที่ใบเสร็จ</th>
+                                        <th>สาเหตุ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($group['ambiguous'] as $i => $row)
+                                        <tr>
+                                            <td>{{ $i + 1 }}</td>
+                                            <td>{{ $row['excel_std_code'] ?: '—' }}</td>
+                                            <td><strong>{{ $row['excel_name'] }}</strong></td>
+                                            <td class="num">{{ number_format((float)$row['amount'], 2) }}</td>
+                                            <td>{{ $row['slip_no'] ?: '—' }}</td>
+                                            <td class="meta">
+                                                {{ $row['reason'] ?? 'รายการซ้ำ' }}
+                                                @if(!empty($row['candidates']))
+                                                    <br>
+                                                    @foreach($row['candidates'] as $c)
+                                                        {{ $c['std_code'] }} {{ $c['name'] }}
+                                                        ({{ $c['depart_name'] ?: '—' }})@if(!$loop->last)<br>@endif
+                                                    @endforeach
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </section>
+            @empty
+                <p class="empty">ไม่พบรายการจากไฟล์</p>
+            @endforelse
 
             <div class="confirm-bar">
-                @if(!empty($preview['ambiguous']))
+                @if($hasAmbiguous)
                     <p>
-                        พบชื่อ-สกุลซ้ำในไฟล์ จึง<strong>ยังไม่บันทึกข้อมูล</strong>
+                        พบรายการซ้ำในภาค/ปีเดียวกัน (รหัส + ชื่อเดียวกัน) จึง<strong>ยังไม่บันทึกข้อมูล</strong>
                         กรุณาตรวจสอบไฟล์ให้ถูกต้อง แล้วอัปโหลดใหม่
                     </p>
                     <button class="btn btn-primary" type="button" disabled>
                         ยังไม่สามารถบันทึกได้
                     </button>
                 @else
-                    <p>กดยืนยันเฉพาะรายการที่พบชื่อตรงกันเท่านั้น ระบบจะตั้งสถานะเป็น <strong>ชำระแล้ว</strong> พร้อมอัปเดตจำนวนเงินและเลขที่ใบเสร็จ</p>
+                    <p>
+                        ตรวจแยกตามภาค/ปีด้านบนแล้วกดบันทึก — อัปเดตเฉพาะรายการที่จับคู่ได้
+                        (สถานะเป็น <strong>ชำระแล้ว</strong> พร้อมเลขที่ใบเสร็จและจำนวนเงิน)
+                    </p>
                     <form method="POST" action="{{ route('research-fee.payments.upload.confirm') }}" id="confirm-form">
                         @csrf
                         <input type="hidden" name="token" value="{{ $preview['token'] }}">
