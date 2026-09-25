@@ -110,6 +110,23 @@
     .dup-list { margin: .2rem 0 0; padding-left: 1.15rem; line-height: 1.55; }
     .dup-list li { margin: .15rem 0; }
     .stat.dup strong { color: #c2410c; }
+    .stat.conflict strong { color: #b45309; }
+
+    .alert-conflict {
+        background: #fffbeb; border: 1px solid rgba(180,83,9,.28); color: #9a3412;
+        display: grid; gap: .45rem; margin-bottom: 1rem;
+    }
+    .diff-box {
+        margin-top: .35rem; padding: .55rem .7rem; border-radius: .65rem;
+        background: rgba(255,255,255,.72); border: 1px solid rgba(180,83,9,.18);
+        font-size: .82rem; line-height: 1.5;
+    }
+    .diff-box .diff-row { display: grid; gap: .15rem; margin: .25rem 0; }
+    .diff-box .diff-label { font-weight: 700; color: #9a3412; }
+    .diff-box .from-to { color: var(--ink-muted); }
+    .diff-box .from-to b { color: var(--ink); font-weight: 700; }
+    .subtable-title.conflict { color: #b45309; }
+    .chip-stats .conflict { color: #b45309; }
 
     .summary {
         display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .75rem; margin-bottom: 1rem;
@@ -198,6 +215,7 @@
     }
     .subtable-title.warn { color: #9a3412; }
     .subtable-title.dup { color: #c2410c; }
+    .subtable-title.conflict { color: #b45309; }
 
     .table-wrap { overflow-x: auto; margin: 0 -.2rem; }
     table { width: 100%; border-collapse: collapse; min-width: 760px; }
@@ -339,7 +357,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v4M12 16h.01"/></svg>
             <div>
                 รูปแบบไฟล์: คอลัมน์ H = ชื่อและรหัสนักศึกษา, G = จำนวนเงิน, C = เลขที่ใบเสร็จ, D = ภาคการศึกษา/ปี
-                ถือว่าซ้ำเมื่ออยู่ในภาค/ปีเดียวกัน และมีรหัสนักศึกษา + ชื่อเดียวกัน — ระบบจะแสดงผลแยกตามภาค/ปีก่อนให้ยืนยันบันทึก
+                ถ้ามีรายการที่ชำระแล้วแต่จำนวนเงิน/เลขที่ใบเสร็จไม่ตรงกับไฟล์ ระบบจะแสดงข้อแตกต่างและไม่เขียนทับ
             </div>
         </div>
     </div>
@@ -348,6 +366,9 @@
         @php
             $termGroups = $preview['term_groups'] ?? [];
             $hasAmbiguous = !empty($preview['ambiguous']);
+            $hasConflicts = !empty($preview['conflicts']);
+            $conflictCount = count($preview['conflicts'] ?? []);
+            $unchangedCount = count($preview['unchanged'] ?? []);
         @endphp
         <div class="panel">
             <div class="panel-head">
@@ -366,8 +387,8 @@
             <div class="summary">
                 <div class="stat"><small>ทั้งหมดในไฟล์</small><strong>{{ number_format($preview['total_rows'] ?? 0) }}</strong></div>
                 <div class="stat ok"><small>จะอัปเดต</small><strong>{{ number_format(count($preview['matched'] ?? [])) }}</strong></div>
-                <div class="stat warn"><small>ไม่พบในฐานข้อมูล</small><strong>{{ number_format(count($preview['unmatched'] ?? [])) }}</strong></div>
-                <div class="stat dup"><small>รายการซ้ำ</small><strong>{{ number_format(count($preview['ambiguous'] ?? [])) }}</strong></div>
+                <div class="stat conflict"><small>ข้อมูลไม่ตรง</small><strong>{{ number_format($conflictCount) }}</strong></div>
+                <div class="stat warn"><small>ไม่พบ / ซ้ำ</small><strong>{{ number_format(count($preview['unmatched'] ?? []) + count($preview['ambiguous'] ?? [])) }}</strong></div>
             </div>
 
             @if(!empty($termGroups))
@@ -382,6 +403,9 @@
                                 <div class="chip-title">ภาค{{ $group['label'] }}</div>
                                 <div class="chip-stats">
                                     <span class="ok">อัปเดต <b>{{ number_format($group['matched_count']) }}</b></span>
+                                    @if(($group['conflict_count'] ?? 0) > 0)
+                                        <span class="conflict">ไม่ตรง <b>{{ number_format($group['conflict_count']) }}</b></span>
+                                    @endif
                                     <span class="warn">ไม่พบ <b>{{ number_format($group['unmatched_count']) }}</b></span>
                                     @if(($group['ambiguous_count'] ?? 0) > 0)
                                         <span class="dup">ซ้ำ <b>{{ number_format($group['ambiguous_count']) }}</b></span>
@@ -392,6 +416,40 @@
                                 </div>
                             </a>
                         @endforeach
+                    </div>
+                </div>
+            @endif
+
+            @if($hasConflicts)
+                <div class="alert alert-conflict" role="alert">
+                    <div style="display:flex;gap:.5rem;align-items:flex-start">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:1.15rem;height:1.15rem;flex-shrink:0;margin-top:.05rem"><path d="M12 3 21 19H3L12 3Z"/><path d="M12 9v5M12 16.5h.01"/></svg>
+                        <div>
+                            <strong>พบ {{ number_format($conflictCount) }} รายการที่บันทึกชำระเงินแล้ว แต่ข้อมูลไม่ตรงกับไฟล์</strong>
+                            <div class="meta" style="margin-top:.25rem;color:#9a3412">
+                                ระบบจะ<strong>ไม่เขียนทับ</strong>รายการเหล่านี้ — กรุณาเปรียบเทียบข้อมูลในระบบกับไฟล์ แล้วแก้ไขให้ถูกต้องก่อน
+                            </div>
+                            <ul class="dup-list">
+                                @foreach($preview['conflicts'] as $row)
+                                    <li>
+                                        <strong>{{ $row['name'] ?? $row['excel_name'] }}</strong>
+                                        · {{ $row['std_code'] ?? ($row['excel_std_code'] ?: '—') }}
+                                        · {{ $row['term_year_label'] ?? '—' }}
+                                        <div class="diff-box">
+                                            @foreach(($row['differences'] ?? []) as $diff)
+                                                <div class="diff-row">
+                                                    <span class="diff-label">{{ $diff['label'] }}</span>
+                                                    <span class="from-to">
+                                                        ในระบบ: <b>{{ $diff['current'] }}</b>
+                                                        → จากไฟล์: <b>{{ $diff['incoming'] }}</b>
+                                                    </span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
                     </div>
                 </div>
             @endif
@@ -422,6 +480,13 @@
                 </div>
             @endif
 
+            @if($unchangedCount > 0 && !$hasAmbiguous)
+                <div class="alert alert-ok" role="status" style="margin-bottom:1rem">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5v5.2c0 4.4-2.9 7.8-8 9.3-5.1-1.5-8-4.9-8-9.3V7.5L12 3Z"/><path d="M9.2 12.1l1.8 1.8 3.8-3.8"/></svg>
+                    มี {{ number_format($unchangedCount) }} รายการที่ชำระเงินแล้วและข้อมูลตรงกับไฟล์ — จะข้ามไม่บันทึกซ้ำ
+                </div>
+            @endif
+
             @forelse($termGroups as $group)
                 <section class="term-block" id="{{ $group['anchor'] }}">
                     <div class="term-block-head">
@@ -430,6 +495,9 @@
                         </h3>
                         <div class="term-block-meta">
                             <span>อัปเดต <strong>{{ number_format($group['matched_count']) }}</strong></span>
+                            @if(($group['conflict_count'] ?? 0) > 0)
+                                <span>ไม่ตรง <strong>{{ number_format($group['conflict_count']) }}</strong></span>
+                            @endif
                             <span>ไม่พบ <strong>{{ number_format($group['unmatched_count']) }}</strong></span>
                             @if(($group['ambiguous_count'] ?? 0) > 0)
                                 <span>ซ้ำ <strong>{{ number_format($group['ambiguous_count']) }}</strong></span>
@@ -481,6 +549,47 @@
                             </tbody>
                         </table>
                     </div>
+
+                    @if(!empty($group['conflicts']))
+                        <div class="subtable-title conflict">ข้อมูลไม่ตรงกับที่มีในระบบ — ภาค{{ $group['label'] }} (ไม่เขียนทับ)</div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>รหัส / ชื่อ</th>
+                                        <th>ข้อแตกต่าง</th>
+                                        <th>หมายเหตุ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($group['conflicts'] as $i => $row)
+                                        <tr>
+                                            <td>{{ $i + 1 }}</td>
+                                            <td>
+                                                <strong>{{ $row['name'] }}</strong>
+                                                <div class="meta">{{ $row['std_code'] }}</div>
+                                            </td>
+                                            <td>
+                                                <div class="diff-box" style="margin:0">
+                                                    @foreach(($row['differences'] ?? []) as $diff)
+                                                        <div class="diff-row">
+                                                            <span class="diff-label">{{ $diff['label'] }}</span>
+                                                            <span class="from-to">
+                                                                ในระบบ: <b>{{ $diff['current'] }}</b>
+                                                                → จากไฟล์: <b>{{ $diff['incoming'] }}</b>
+                                                            </span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </td>
+                                            <td class="meta">{{ $row['reason'] ?? 'ข้อมูลไม่ตรง' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
 
                     @if(!empty($group['unmatched']))
                         <div class="subtable-title warn">ไม่พบในฐานข้อมูล — ภาค{{ $group['label'] }}</div>
@@ -564,9 +673,22 @@
                     <button class="btn btn-primary" type="button" disabled>
                         ยังไม่สามารถบันทึกได้
                     </button>
+                @elseif($hasConflicts && empty($preview['matched']))
+                    <p>
+                        พบเฉพาะรายการที่ข้อมูลไม่ตรงกับระบบ จึง<strong>ยังไม่บันทึก</strong>
+                        กรุณาตรวจสอบจำนวนเงินและเลขที่ใบเสร็จให้ตรงกันก่อน
+                    </p>
+                    <button class="btn btn-primary" type="button" disabled>
+                        ยังไม่สามารถบันทึกได้
+                    </button>
                 @else
                     <p>
-                        ตรวจแยกตามภาค/ปีด้านบนแล้วกดบันทึก — อัปเดตเฉพาะรายการที่จับคู่ได้
+                        @if($hasConflicts)
+                            มีรายการที่ข้อมูลไม่ตรง — ระบบจะ<strong>ไม่เขียนทับ</strong>รายการเหล่านั้น
+                            และจะบันทึกเฉพาะรายการใหม่ที่จับคู่ได้
+                        @else
+                            ตรวจแยกตามภาค/ปีด้านบนแล้วกดบันทึก — อัปเดตเฉพาะรายการที่จับคู่ได้
+                        @endif
                         (สถานะเป็น <strong>ชำระแล้ว</strong> พร้อมเลขที่ใบเสร็จและจำนวนเงิน)
                     </p>
                     <form method="POST" action="{{ route('research-fee.payments.upload.confirm') }}" id="confirm-form">

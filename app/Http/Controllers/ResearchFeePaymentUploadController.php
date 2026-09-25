@@ -93,19 +93,33 @@ class ResearchFeePaymentUploadController extends Controller
             );
         }
 
+        $conflictCount = count($preview['conflicts'] ?? []);
         $groupLabels = collect($preview['term_groups'] ?? [])
             ->map(function (array $g) {
                 return ($g['label'] ?? '—').' (อัปเดต '.($g['matched_count'] ?? 0).')';
             })
             ->implode(', ');
 
-        return $redirect->with('success', sprintf(
-            'อ่านไฟล์สำเร็จ %d รายการ — จะอัปเดต %d, ไม่พบ %d%s',
+        $message = sprintf(
+            'อ่านไฟล์สำเร็จ %d รายการ — จะอัปเดต %d, ไม่พบ %d',
             $preview['total_rows'],
             count($preview['matched']),
-            count($preview['unmatched']),
-            $groupLabels !== '' ? ' · ภาค: '.$groupLabels : ''
-        ));
+            count($preview['unmatched'])
+        );
+
+        if ($conflictCount > 0) {
+            $message .= sprintf(', พบข้อมูลไม่ตรง %d (กรุณาตรวจสอบ)', $conflictCount);
+        }
+
+        if ($groupLabels !== '') {
+            $message .= ' · ภาค: '.$groupLabels;
+        }
+
+        if ($conflictCount > 0) {
+            return $redirect->with('error', $message);
+        }
+
+        return $redirect->with('success', $message);
     }
 
     public function confirm(Request $request): RedirectResponse
@@ -175,6 +189,8 @@ class ResearchFeePaymentUploadController extends Controller
             'matched_count' => count($preview['matched']),
             'unmatched_count' => count($preview['unmatched'] ?? []),
             'ambiguous_count' => count($preview['ambiguous'] ?? []),
+            'conflict_count' => count($preview['conflicts'] ?? []),
+            'unchanged_count' => count($preview['unchanged'] ?? []),
         ]);
 
         return redirect()

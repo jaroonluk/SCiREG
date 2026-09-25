@@ -60,6 +60,8 @@ class ResearchFeePaymentUploadService
         $matched = [];
         $unmatched = [];
         $ambiguous = [];
+        $conflicts = [];
+        $unchanged = [];
         $usedKeys = [];
 
         foreach ($excelRows as $row) {
@@ -136,7 +138,7 @@ class ResearchFeePaymentUploadService
 
             $usedKeys[(string) $student->std_code.'|'.$student->term.'|'.$student->year] = true;
 
-            $matched[] = [
+            $base = [
                 ...$row,
                 'std_code' => $student->std_code,
                 'name' => $student->name,
@@ -148,9 +150,32 @@ class ResearchFeePaymentUploadService
                 'current_amount' => (float) ($student->amount ?? 0),
                 'current_slip_no' => $student->slip_no,
             ];
+
+            // Already paid/updated: compare with incoming Excel values.
+            if ($this->isAlreadyUpdated($student)) {
+                $differences = $this->paymentDifferences($student, $row);
+                if ($differences !== []) {
+                    $conflicts[] = [
+                        ...$base,
+                        'reason' => 'มีการบันทึกชำระเงินแล้ว แต่ข้อมูลไม่ตรงกับไฟล์ที่อัปโหลด',
+                        'differences' => $differences,
+                    ];
+
+                    continue;
+                }
+
+                $unchanged[] = [
+                    ...$base,
+                    'reason' => 'มีการบันทึกชำระเงินแล้ว และข้อมูลตรงกับไฟล์ (ไม่ต้องอัปเดตซ้ำ)',
+                ];
+
+                continue;
+            }
+
+            $matched[] = $base;
         }
 
-        $termGroups = $this->buildTermYearGroups($matched, $unmatched, $ambiguous);
+        $termGroups = $this->buildTermYearGroups($matched, $unmatched, $ambiguous, $conflicts, $unchanged);
 
         return [
             'term' => $term,
@@ -161,11 +186,54 @@ class ResearchFeePaymentUploadService
             'matched' => $matched,
             'unmatched' => $unmatched,
             'ambiguous' => $ambiguous,
+            'conflicts' => $conflicts,
+            'unchanged' => $unchanged,
             'has_duplicates' => $ambiguous !== [],
+            'has_conflicts' => $conflicts !== [],
             'total_rows' => count($excelRows),
             'term_groups' => $termGroups,
             'term_group_count' => count($termGroups),
         ];
+    }
+
+    private function isAlreadyUpdated(object $student): bool
+    {
+        $status = (string) ($student->status ?? '');
+        $slip = trim((string) ($student->slip_no ?? ''));
+
+        return $status === '3' || $slip !== '';
+    }
+
+    /**
+     * @return list<array{field:string,label:string,current:string,incoming:string}>
+     */
+    private function paymentDifferences(object $student, array $row): array
+    {
+        $differences = [];
+
+        $currentAmount = round((float) ($student->amount ?? 0), 2);
+        $incomingAmount = round((float) ($row['amount'] ?? 0), 2);
+        if (abs($currentAmount - $incomingAmount) > 0.009) {
+            $differences[] = [
+                'field' => 'amount',
+                'label' => 'จำนวนเงิน',
+                'current' => number_format($currentAmount, 2),
+                'incoming' => number_format($incomingAmount, 2),
+            ];
+        }
+
+        $currentSlip = trim((string) ($student->slip_no ?? ''));
+        $incomingSlip = trim((string) ($row['slip_no'] ?? ''));
+        if ($currentSlip !== $incomingSlip) {
+            $differences[] = [
+                'field' => 'slip_no',
+                'label' => 'เลขที่ใบเสร็จ',
+                'current' => $currentSlip !== '' ? $currentSlip : '—',
+                'incoming' => $incomingSlip !== '' ? $incomingSlip : '—',
+            ];
+        }
+
+        return $differences;
     }
 
     /**
@@ -187,10 +255,17 @@ class ResearchFeePaymentUploadService
      * @param  list<array<string,mixed>>  $matched
      * @param  list<array<string,mixed>>  $unmatched
      * @param  list<array<string,mixed>>  $ambiguous
+     * @param  list<array<string,mixed>>  $conflicts
+     * @param  list<array<string,mixed>>  $unchanged
      * @return list<array<string,mixed>>
      */
-    private function buildTermYearGroups(array $matched, array $unmatched, array $ambiguous): array
-    {
+    private function buildTermYearGroups(
+        array $matched,
+        array $unmatched,
+        array $ambiguous,
+        array $conflicts = [],
+        array $unchanged = []
+    ): array {
         $buckets = [];
 
         $push = function (string $bucket, array $row) use (&$buckets): void {
@@ -205,6 +280,8 @@ class ResearchFeePaymentUploadService
                     'matched' => [],
                     'unmatched' => [],
                     'ambiguous' => [],
+                    'conflicts' => [],
+                    'unchanged' => [],
                 ];
             }
             $buckets[$key][$bucket][] = $row;
@@ -218,6 +295,12 @@ class ResearchFeePaymentUploadService
         }
         foreach ($ambiguous as $row) {
             $push('ambiguous', $row);
+        }
+        foreach ($conflicts as $row) {
+            $push('conflicts', $row);
+        }
+        foreach ($unchanged as $row) {
+            $push('unchanged', $row);
         }
 
         uasort($buckets, function (array $a, array $b): int {
@@ -236,6 +319,8 @@ class ResearchFeePaymentUploadService
                 'matched_count' => count($group['matched']),
                 'unmatched_count' => count($group['unmatched']),
                 'ambiguous_count' => count($group['ambiguous']),
+                'conflict_count' => count($group['conflicts']),
+                'unchanged_count' => count($group['unchanged']),
                 'matched_amount' => round($matchedAmount, 2),
                 'anchor' => 'term-'.$group['term'].'-'.$group['year'],
             ];
