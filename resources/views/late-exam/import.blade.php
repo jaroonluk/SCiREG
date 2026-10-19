@@ -90,14 +90,15 @@
         display: flex; gap: .45rem; align-items: flex-start;
     }
     .hint svg { width: 1rem; height: 1rem; color: var(--champaca-deep); flex-shrink: 0; margin-top: .15rem; }
-    .alert-success, .alert-info {
+    .alert-success, .alert-info, .alert-error {
         margin-bottom: 1rem; padding: .85rem 1rem; border-radius: .9rem;
         font-size: .95rem; display: flex; gap: .55rem; align-items: flex-start;
         animation: rise .35s ease both;
     }
     .alert-success { background: #eefbf1; border: 1px solid #bbdfc4; color: #166534; }
     .alert-info { background: rgba(255,249,239,.95); border: 1px solid rgba(201,146,26,.28); color: var(--ink); }
-    .alert-success svg, .alert-info svg { width: 1.1rem; height: 1.1rem; flex-shrink: 0; margin-top: .1rem; }
+    .alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .alert-success svg, .alert-info svg, .alert-error svg { width: 1.1rem; height: 1.1rem; flex-shrink: 0; margin-top: .1rem; }
 
     .stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: .75rem; margin-bottom: 1.1rem; }
     .stat {
@@ -153,6 +154,12 @@
             <span>{{ session('success') }}</span>
         </div>
     @endif
+    @if(session('error'))
+        <div class="alert-error">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 8v5M12 16.2h.01"/></svg>
+            <span>{{ session('error') }}</span>
+        </div>
+    @endif
 
     <div class="panel">
         <div class="panel-head">
@@ -165,7 +172,12 @@
             </div>
         </div>
 
-        <form class="import-form" method="POST" action="{{ route('late-exam.import.store') }}" onsubmit="if (event.submitter && event.submitter.classList.contains('btn-primary')) { const button = event.submitter; setTimeout(() => { button.disabled = true; }, 0); }">
+        <form
+            id="late-exam-import-form"
+            class="import-form"
+            method="POST"
+            action="{{ route('late-exam.import.store') }}"
+        >
             @csrf
             <input type="hidden" name="preview" value="1">
             <div class="field">
@@ -173,7 +185,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
                     ปีการศึกษา
                 </label>
-                <select id="year" name="year">
+                <select id="year" name="year" required>
                     @foreach($years as $y)
                         <option value="{{ $y }}" @selected((int)$year === (int)$y)>{{ $y }}</option>
                     @endforeach
@@ -184,29 +196,36 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
                     ภาคการศึกษา
                 </label>
-                <select id="term" name="term">
+                <select id="term" name="term" required>
                     <option value="1" @selected((int)$term === 1)>ภาคต้น</option>
                     <option value="2" @selected((int)$term === 2)>ภาคปลาย</option>
                 </select>
             </div>
             <div class="actions">
-                <button class="btn" type="submit" formmethod="GET" formaction="{{ route('late-exam.import') }}">
+                <button class="btn" type="submit" name="action" value="preview" formmethod="GET" formaction="{{ route('late-exam.import') }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
                     ดูตัวอย่างจำนวน
                 </button>
-                <button class="btn btn-primary" type="submit">
+                <button class="btn btn-primary" type="submit" name="action" value="import" id="btn-import">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3v10"/><path d="M8.5 9.5 12 13l3.5-3.5"/><path d="M5 18h14"/></svg>
-                    นำเข้า / แทนที่ข้อมูลภาคนี้
+                    <span data-label>นำเข้า / แทนที่ข้อมูลภาคนี้</span>
                 </button>
             </div>
         </form>
         <p class="hint">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8"/><path d="M12 8v5M12 16.2h.01"/></svg>
-            <span>การนำเข้าจะลบแคชเดิมของปี/ภาคที่เลือก แล้วใส่ข้อมูลใหม่จาก REG (FACULTYID=2, STUDENTSTATUS=10)</span>
+            <span>การนำเข้าจะลบแคชเดิมของปี/ภาคที่เลือก แล้วใส่ข้อมูลใหม่จาก REG (FACULTYID=2, STUDENTSTATUS=10) — ใช้ค่าจากช่องปี/ภาคด้านบนทุกครั้ง</span>
         </p>
     </div>
 
-    @php $viewData = $result ?? $summary; @endphp
+    @php
+        $viewData = $result ?? $summary;
+        if ($result && $summary
+            && ((int) ($result['year'] ?? 0) !== (int) $year || (int) ($result['term'] ?? 0) !== (int) $term)
+        ) {
+            $viewData = $summary;
+        }
+    @endphp
     @if($viewData)
         <div class="panel">
             <div class="panel-head">
@@ -247,10 +266,15 @@
                 </div>
             </div>
 
-            @if(!empty($viewData['preview']))
+            @if((int) ($viewData['reg_total'] ?? 0) === 0)
+                <div class="alert-error">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8"/><path d="M12 8v5M12 16.2h.01"/></svg>
+                    <span>ไม่พบนักศึกษาใน REG สำหรับภาคนี้ — ยังนำเข้าไม่ได้จนกว่าจะมี studentstatus ปี/ภาคนี้</span>
+                </div>
+            @elseif(!empty($viewData['preview']))
                 <div class="alert-info">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8"/><path d="M12 8v5M12 16.2h.01"/></svg>
-                    <span>ตัวอย่างสูงสุด 20 รายการ</span>
+                    <span>พบข้อมูลแล้ว — กด “นำเข้า / แทนที่ข้อมูลภาคนี้” เพื่อบันทึกลงแคช (ตัวอย่างสูงสุด 20 รายการด้านล่าง)</span>
                 </div>
                 <div class="table-wrap">
                     <table>
@@ -276,3 +300,32 @@
         </div>
     @endif
 @endsection
+
+@push('scripts')
+<script>
+(() => {
+    const form = document.getElementById('late-exam-import-form');
+    const btnImport = document.getElementById('btn-import');
+    const yearEl = document.getElementById('year');
+    const termEl = document.getElementById('term');
+    if (!form || !btnImport) return;
+
+    form.addEventListener('submit', (event) => {
+        const submitter = event.submitter;
+        if (!submitter || submitter !== btnImport) return;
+
+        const year = yearEl?.value || '';
+        const term = termEl?.value === '1' ? 'ภาคต้น' : 'ภาคปลาย';
+        const ok = confirm('ยืนยันนำเข้า / แทนที่แคช\n' + term + ' ปีการศึกษา ' + year + ' ?');
+        if (!ok) {
+            event.preventDefault();
+            return;
+        }
+
+        btnImport.disabled = true;
+        const label = btnImport.querySelector('[data-label]');
+        if (label) label.textContent = 'กำลังนำเข้า...';
+    });
+})();
+</script>
+@endpush

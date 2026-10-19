@@ -19,12 +19,16 @@ class LateExamService
      */
     public function fetchFromReg(int $term, int $year): Collection
     {
+        // ACADYEAR/SEMESTER in REG are often stored as strings — bind as strings to avoid mismatch.
+        $yearKey = (string) $year;
+        $termKey = (string) $term;
+
         return DB::connection('reg')
             ->table('studentmaster as sm')
-            ->join('studentstatus as ss', function ($join) use ($term, $year) {
+            ->join('studentstatus as ss', function ($join) use ($termKey, $yearKey) {
                 $join->on('sm.STUDENTID', '=', 'ss.STUDENTID')
-                    ->where('ss.ACADYEAR', '=', $year)
-                    ->where('ss.SEMESTER', '=', $term)
+                    ->where('ss.ACADYEAR', '=', $yearKey)
+                    ->where('ss.SEMESTER', '=', $termKey)
                     ->where('ss.STUDENTSTATUS', '=', self::STUDYING_STATUS);
             })
             ->leftJoin('prefix as p', 'sm.PREFIXID', '=', 'p.PREFIXID')
@@ -33,9 +37,9 @@ class LateExamService
                 $join->on('sm.FACULTYID', '=', 'd.FACULTYID')
                     ->on('sm.DEPARTMENTID', '=', 'd.DEPARTMENTID');
             })
-            // vstudentbio: faculty bio snapshot (ไม่มี CITIZENID — คอลัมน์นั้นมีเฉพาะ studentbio)
-            ->leftJoin('vstudentbio as bio', 'sm.STUDENTID', '=', 'bio.STUDENTID')
             ->where('sm.FACULTYID', self::FACULTY_SCIENCE)
+            ->whereNotNull('sm.STUDENTCODE')
+            ->where('sm.STUDENTCODE', '!=', '')
             ->orderBy('d.DEPARTMENTNAME')
             ->orderBy('sm.STUDENTCODE')
             ->select([
@@ -82,14 +86,18 @@ class LateExamService
     public function importFromReg(int $term, int $year): array
     {
         $rows = $this->fetchFromReg($term, $year);
-        $mapped = $rows->map(fn ($row) => $this->mapImportRow($row, $term, $year))->values();
+        // Unique STUDENTCODE per term/year — keep first row if REG ever returns duplicates.
+        $mapped = $rows
+            ->map(fn ($row) => $this->mapImportRow($row, $term, $year))
+            ->unique('STUDENTCODE')
+            ->values();
         $existing = LateRegStudent::query()
             ->where('TERM', $term)
             ->where('YEAR', $year)
             ->count();
 
         $imported = 0;
-        $now = now();
+        $now = now()->format('Y-m-d H:i:s');
 
         DB::connection('discipline')->transaction(function () use ($term, $year, $mapped, $now, &$imported) {
             LateRegStudent::query()
@@ -103,6 +111,10 @@ class LateExamService
 
                     return $row;
                 })->values()->all();
+
+                if ($payload === []) {
+                    continue;
+                }
 
                 DB::connection('discipline')->table('late_reg_student')->insert($payload);
                 $imported += count($payload);
@@ -660,13 +672,12 @@ class LateExamService
     {
         return [
             'STUDENTID' => $row->STUDENTID,
-            'STUDENTCODE' => (string) $row->STUDENTCODE,
-            'PREFIXABB' => $row->PREFIXABB,
-            'STUDENTNAME' => $row->STUDENTNAME,
-            'STUDENTSURNAME' => $row->STUDENTSURNAME,
-            'PROGRAMNAME' => $row->PROGRAMNAME,
-            'DEPARTMENTNAME' => $row->DEPARTMENTNAME,
-            // vstudentbio has no CITIZENID — keep column null for cache schema compatibility
+            'STUDENTCODE' => trim((string) $row->STUDENTCODE),
+            'PREFIXABB' => $row->PREFIXABB !== null ? trim((string) $row->PREFIXABB) : null,
+            'STUDENTNAME' => $row->STUDENTNAME !== null ? trim((string) $row->STUDENTNAME) : null,
+            'STUDENTSURNAME' => $row->STUDENTSURNAME !== null ? trim((string) $row->STUDENTSURNAME) : null,
+            'PROGRAMNAME' => $row->PROGRAMNAME !== null ? trim((string) $row->PROGRAMNAME) : null,
+            'DEPARTMENTNAME' => $row->DEPARTMENTNAME !== null ? trim((string) $row->DEPARTMENTNAME) : null,
             'CITIZENID' => null,
             'TERM' => $term,
             'YEAR' => $year,

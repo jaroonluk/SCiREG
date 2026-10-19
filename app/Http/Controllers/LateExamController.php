@@ -53,16 +53,39 @@ class LateExamController extends Controller
             'year' => ['required', 'integer', 'min:2555', 'max:2600'],
         ]);
 
-        $result = $this->lateExam->importFromReg((int) $data['term'], (int) $data['year']);
+        $term = (int) $data['term'];
+        $year = (int) $data['year'];
+        $redirect = redirect()->route('late-exam.import', [
+            'term' => $term,
+            'year' => $year,
+            'preview' => 1,
+        ]);
 
-        return redirect()
-            ->route('late-exam.import', [
-                'term' => $data['term'],
-                'year' => $data['year'],
-                'preview' => 1,
-            ])
+        try {
+            @set_time_limit(180);
+            $result = $this->lateExam->importFromReg($term, $year);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return $redirect->with(
+                'error',
+                'นำเข้าไม่สำเร็จสำหรับภาค '.($term === 1 ? 'ต้น' : 'ปลาย').'/'.$year.': '.$e->getMessage()
+            );
+        }
+
+        if ((int) ($result['imported'] ?? 0) === 0) {
+            return $redirect
+                ->with('import_result', $result)
+                ->with(
+                    'error',
+                    'ไม่พบนักศึกษาใน REG สำหรับภาค '.($term === 1 ? 'ต้น' : 'ปลาย').'/'.$year
+                    .' (FACULTYID=2, STUDENTSTATUS=10) — ตรวจสอบปี/ภาค หรือข้อมูล studentstatus ใน REG'
+                );
+        }
+
+        return $redirect
             ->with('import_result', $result)
-            ->with('success', 'นำเข้าข้อมูลเรียบร้อยแล้ว '.$result['imported'].' รายการ');
+            ->with('success', 'นำเข้าข้อมูลเรียบร้อยแล้ว '.$result['imported'].' รายการ (ภาค '.($term === 1 ? 'ต้น' : 'ปลาย').'/'.$year.')');
     }
 
     public function recordIndex(): View
