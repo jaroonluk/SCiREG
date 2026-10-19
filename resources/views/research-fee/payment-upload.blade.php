@@ -141,6 +141,10 @@
     .stat.ok strong { color: #166534; }
     .stat.warn strong { color: #9a3412; }
     .stat.muted strong { color: #475569; }
+    .stat.same strong { color: #0f766e; }
+    .chip-stats .same { color: #0f766e; }
+    .subtable-title.same { color: #0f766e; }
+    .term-chip .chip-stats .same b { color: #0f766e; }
 
     .term-overview {
         margin: 0 0 1.15rem;
@@ -387,14 +391,14 @@
             <div class="summary">
                 <div class="stat"><small>ทั้งหมดในไฟล์</small><strong>{{ number_format($preview['total_rows'] ?? 0) }}</strong></div>
                 <div class="stat ok"><small>จะอัปเดต</small><strong>{{ number_format(count($preview['matched'] ?? [])) }}</strong></div>
-                <div class="stat conflict"><small>ข้อมูลไม่ตรง</small><strong>{{ number_format($conflictCount) }}</strong></div>
-                <div class="stat warn"><small>ไม่พบ / ซ้ำ</small><strong>{{ number_format(count($preview['unmatched'] ?? []) + count($preview['ambiguous'] ?? [])) }}</strong></div>
+                <div class="stat same"><small>พบแล้ว (ข้อมูลตรง)</small><strong>{{ number_format($unchangedCount) }}</strong></div>
+                <div class="stat warn"><small>ไม่พบ / ไม่ตรง / ซ้ำ</small><strong>{{ number_format(count($preview['unmatched'] ?? []) + count($preview['ambiguous'] ?? []) + $conflictCount) }}</strong></div>
             </div>
 
             @if(!empty($termGroups))
                 <div class="term-overview">
                     <div class="term-overview-head">
-                        <h3>ภาคการศึกษา / ปีการศึกษา ที่จะอัปเดต</h3>
+                        <h3>ภาคการศึกษา / ปีการศึกษา ที่พบในไฟล์</h3>
                         <p class="meta">พบ {{ number_format(count($termGroups)) }} ภาค — กดเพื่อไปดูรายละเอียด</p>
                     </div>
                     <div class="term-chip-grid">
@@ -403,6 +407,9 @@
                                 <div class="chip-title">ภาค{{ $group['label'] }}</div>
                                 <div class="chip-stats">
                                     <span class="ok">อัปเดต <b>{{ number_format($group['matched_count']) }}</b></span>
+                                    @if(($group['unchanged_count'] ?? 0) > 0)
+                                        <span class="same">ตรงแล้ว <b>{{ number_format($group['unchanged_count']) }}</b></span>
+                                    @endif
                                     @if(($group['conflict_count'] ?? 0) > 0)
                                         <span class="conflict">ไม่ตรง <b>{{ number_format($group['conflict_count']) }}</b></span>
                                     @endif
@@ -483,7 +490,24 @@
             @if($unchangedCount > 0 && !$hasAmbiguous)
                 <div class="alert alert-ok" role="status" style="margin-bottom:1rem">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5v5.2c0 4.4-2.9 7.8-8 9.3-5.1-1.5-8-4.9-8-9.3V7.5L12 3Z"/><path d="M9.2 12.1l1.8 1.8 3.8-3.8"/></svg>
-                    มี {{ number_format($unchangedCount) }} รายการที่ชำระเงินแล้วและข้อมูลตรงกับไฟล์ — จะข้ามไม่บันทึกซ้ำ
+                    <div>
+                        <strong>พบ {{ number_format($unchangedCount) }} รายการที่ชำระเงินแล้ว และข้อมูลตรงกับไฟล์</strong>
+                        <div class="meta" style="margin-top:.2rem">ระบบจับคู่เจอแล้ว แต่จะข้ามไม่บันทึกซ้ำ — ดูรายชื่อในแต่ละภาคด้านล่าง</div>
+                        <ul class="dup-list">
+                            @foreach(array_slice($preview['unchanged'] ?? [], 0, 12) as $row)
+                                <li>
+                                    <strong>{{ $row['name'] ?? $row['excel_name'] }}</strong>
+                                    · {{ $row['std_code'] ?? ($row['excel_std_code'] ?: '—') }}
+                                    · {{ $row['term_year_label'] ?? '—' }}
+                                    · ใบเสร็จ {{ $row['slip_no'] ?: '—' }}
+                                    · {{ number_format((float)($row['amount'] ?? 0), 2) }} บาท
+                                </li>
+                            @endforeach
+                            @if($unchangedCount > 12)
+                                <li class="meta">และอีก {{ number_format($unchangedCount - 12) }} รายการ</li>
+                            @endif
+                        </ul>
+                    </div>
                 </div>
             @endif
 
@@ -495,6 +519,9 @@
                         </h3>
                         <div class="term-block-meta">
                             <span>อัปเดต <strong>{{ number_format($group['matched_count']) }}</strong></span>
+                            @if(($group['unchanged_count'] ?? 0) > 0)
+                                <span>ตรงแล้ว <strong>{{ number_format($group['unchanged_count']) }}</strong></span>
+                            @endif
                             @if(($group['conflict_count'] ?? 0) > 0)
                                 <span>ไม่ตรง <strong>{{ number_format($group['conflict_count']) }}</strong></span>
                             @endif
@@ -549,6 +576,39 @@
                             </tbody>
                         </table>
                     </div>
+
+                    @if(!empty($group['unchanged']))
+                        <div class="subtable-title same">พบในระบบแล้ว — ข้อมูลตรงกับไฟล์ (ไม่บันทึกซ้ำ) — ภาค{{ $group['label'] }}</div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>รหัสนักศึกษา</th>
+                                        <th>ชื่อนักศึกษา</th>
+                                        <th class="num">จำนวนเงิน</th>
+                                        <th>เลขที่ใบเสร็จ</th>
+                                        <th>หมายเหตุ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($group['unchanged'] as $i => $row)
+                                        <tr>
+                                            <td>{{ $i + 1 }}</td>
+                                            <td>{{ $row['std_code'] }}</td>
+                                            <td>
+                                                <strong>{{ $row['name'] }}</strong>
+                                                <div class="meta">จากไฟล์: {{ $row['excel_name'] }}</div>
+                                            </td>
+                                            <td class="num">{{ number_format((float)$row['amount'], 2) }}</td>
+                                            <td>{{ $row['slip_no'] ?: '—' }}</td>
+                                            <td class="meta">{{ $row['reason'] ?? 'ข้อมูลตรงแล้ว' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
 
                     @if(!empty($group['conflicts']))
                         <div class="subtable-title conflict">ข้อมูลไม่ตรงกับที่มีในระบบ — ภาค{{ $group['label'] }} (ไม่เขียนทับ)</div>

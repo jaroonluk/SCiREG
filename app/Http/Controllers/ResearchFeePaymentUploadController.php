@@ -94,16 +94,23 @@ class ResearchFeePaymentUploadController extends Controller
         }
 
         $conflictCount = count($preview['conflicts'] ?? []);
+        $unchangedCount = count($preview['unchanged'] ?? []);
         $groupLabels = collect($preview['term_groups'] ?? [])
             ->map(function (array $g) {
-                return ($g['label'] ?? '—').' (อัปเดต '.($g['matched_count'] ?? 0).')';
+                $parts = ['อัปเดต '.($g['matched_count'] ?? 0)];
+                if (($g['unchanged_count'] ?? 0) > 0) {
+                    $parts[] = 'ตรงแล้ว '.($g['unchanged_count'] ?? 0);
+                }
+
+                return ($g['label'] ?? '—').' ('.implode(', ', $parts).')';
             })
             ->implode(', ');
 
         $message = sprintf(
-            'อ่านไฟล์สำเร็จ %d รายการ — จะอัปเดต %d, ไม่พบ %d',
+            'อ่านไฟล์สำเร็จ %d รายการ — จะอัปเดต %d, พบแล้ว(ตรง) %d, ไม่พบ %d',
             $preview['total_rows'],
             count($preview['matched']),
+            $unchangedCount,
             count($preview['unmatched'])
         );
 
