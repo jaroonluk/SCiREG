@@ -74,12 +74,18 @@ class LateExamController extends Controller
         }
 
         if ((int) ($result['imported'] ?? 0) === 0) {
+            $dbName = $result['reg_database'] ?? '';
+            $dbHost = $result['reg_host'] ?? '';
+            $hint = trim(($dbHost !== '' ? $dbHost.'/' : '').$dbName);
+
             return $redirect
                 ->with('import_result', $result)
                 ->with(
                     'error',
                     'ไม่พบนักศึกษาใน REG สำหรับภาค '.($term === 1 ? 'ต้น' : 'ปลาย').'/'.$year
-                    .' (FACULTYID=2, STUDENTSTATUS=10) — ตรวจสอบปี/ภาค หรือข้อมูล studentstatus ใน REG'
+                    .' (FACULTYID=2, STUDENTSTATUS=10)'
+                    .($hint !== '' ? " — เชื่อมต่อ {$hint}" : '')
+                    .' — ตรวจ .env DB_REG_* / DB_DATABASE=reg และ studentstatus ใน REG (แคชเดิมยังไม่ถูกลบ)'
                 );
         }
 

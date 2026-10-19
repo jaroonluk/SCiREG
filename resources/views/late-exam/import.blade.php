@@ -269,7 +269,14 @@
             @if((int) ($viewData['reg_total'] ?? 0) === 0)
                 <div class="alert-error">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="8"/><path d="M12 8v5M12 16.2h.01"/></svg>
-                    <span>ไม่พบนักศึกษาใน REG สำหรับภาคนี้ — ยังนำเข้าไม่ได้จนกว่าจะมี studentstatus ปี/ภาคนี้</span>
+                    <span>
+                        ไม่พบนักศึกษาใน REG สำหรับภาคนี้ (FACULTYID=2, STUDENTSTATUS=10)
+                        @if(!empty($viewData['reg_host']) || !empty($viewData['reg_database']))
+                            — กำลังอ่านจาก
+                            {{ trim(($viewData['reg_host'] ?? '').'/'.($viewData['reg_database'] ?? ''), '/') }}
+                        @endif
+                        — ตรวจ .env ให้ DB_DATABASE หรือ DB_REG_DATABASE เป็น <code>reg</code>
+                    </span>
                 </div>
             @elseif(!empty($viewData['preview']))
                 <div class="alert-info">

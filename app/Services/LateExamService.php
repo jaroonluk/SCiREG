@@ -19,27 +19,23 @@ class LateExamService
      */
     public function fetchFromReg(int $term, int $year): Collection
     {
-        // ACADYEAR/SEMESTER in REG are often stored as strings — bind as strings to avoid mismatch.
-        $yearKey = (string) $year;
-        $termKey = (string) $term;
-
+        // REG stores ACADYEAR/SEMESTER/STUDENTSTATUS/FACULTYID as DECIMAL —
+        // compare via UNSIGNED cast so PDO string/int binding cannot miss rows.
         return DB::connection('reg')
             ->table('studentmaster as sm')
-            ->join('studentstatus as ss', function ($join) use ($termKey, $yearKey) {
-                $join->on('sm.STUDENTID', '=', 'ss.STUDENTID')
-                    ->where('ss.ACADYEAR', '=', $yearKey)
-                    ->where('ss.SEMESTER', '=', $termKey)
-                    ->where('ss.STUDENTSTATUS', '=', self::STUDYING_STATUS);
-            })
+            ->join('studentstatus as ss', 'sm.STUDENTID', '=', 'ss.STUDENTID')
             ->leftJoin('prefix as p', 'sm.PREFIXID', '=', 'p.PREFIXID')
             ->leftJoin('program as pr', 'sm.PROGRAMID', '=', 'pr.PROGRAMID')
             ->leftJoin('department as d', function ($join) {
                 $join->on('sm.FACULTYID', '=', 'd.FACULTYID')
                     ->on('sm.DEPARTMENTID', '=', 'd.DEPARTMENTID');
             })
-            ->where('sm.FACULTYID', self::FACULTY_SCIENCE)
+            ->whereRaw('CAST(ss.ACADYEAR AS UNSIGNED) = ?', [$year])
+            ->whereRaw('CAST(ss.SEMESTER AS UNSIGNED) = ?', [$term])
+            ->whereRaw('CAST(ss.STUDENTSTATUS AS UNSIGNED) = ?', [self::STUDYING_STATUS])
+            ->whereRaw('CAST(sm.FACULTYID AS UNSIGNED) = ?', [self::FACULTY_SCIENCE])
             ->whereNotNull('sm.STUDENTCODE')
-            ->where('sm.STUDENTCODE', '!=', '')
+            ->whereRaw("TRIM(sm.STUDENTCODE) <> ''")
             ->orderBy('d.DEPARTMENTNAME')
             ->orderBy('sm.STUDENTCODE')
             ->select([
@@ -53,6 +49,23 @@ class LateExamService
                 DB::raw('NULL as CITIZENID'),
             ])
             ->get();
+    }
+
+    /**
+     * Quick existence probe for diagnostics (same filters as fetchFromReg).
+     */
+    public function countFromReg(int $term, int $year): int
+    {
+        return (int) DB::connection('reg')
+            ->table('studentmaster as sm')
+            ->join('studentstatus as ss', 'sm.STUDENTID', '=', 'ss.STUDENTID')
+            ->whereRaw('CAST(ss.ACADYEAR AS UNSIGNED) = ?', [$year])
+            ->whereRaw('CAST(ss.SEMESTER AS UNSIGNED) = ?', [$term])
+            ->whereRaw('CAST(ss.STUDENTSTATUS AS UNSIGNED) = ?', [self::STUDYING_STATUS])
+            ->whereRaw('CAST(sm.FACULTYID AS UNSIGNED) = ?', [self::FACULTY_SCIENCE])
+            ->whereNotNull('sm.STUDENTCODE')
+            ->whereRaw("TRIM(sm.STUDENTCODE) <> ''")
+            ->count();
     }
 
     /**
@@ -75,6 +88,8 @@ class LateExamService
             'existing' => $existing,
             'imported' => 0,
             'preview' => $preview,
+            'reg_database' => (string) (DB::connection('reg')->getDatabaseName() ?? ''),
+            'reg_host' => (string) (config('database.connections.reg.host') ?? ''),
         ];
     }
 
@@ -89,12 +104,30 @@ class LateExamService
         // Unique STUDENTCODE per term/year — keep first row if REG ever returns duplicates.
         $mapped = $rows
             ->map(fn ($row) => $this->mapImportRow($row, $term, $year))
+            ->filter(fn (array $row) => ($row['STUDENTCODE'] ?? '') !== '')
             ->unique('STUDENTCODE')
             ->values();
         $existing = LateRegStudent::query()
             ->where('TERM', $term)
             ->where('YEAR', $year)
             ->count();
+
+        $regDatabase = (string) (DB::connection('reg')->getDatabaseName() ?? '');
+        $regHost = (string) (config('database.connections.reg.host') ?? '');
+
+        // Never wipe existing cache when REG returned no rows.
+        if ($mapped->isEmpty()) {
+            return [
+                'term' => $term,
+                'year' => $year,
+                'reg_total' => 0,
+                'existing' => $existing,
+                'imported' => 0,
+                'preview' => [],
+                'reg_database' => $regDatabase,
+                'reg_host' => $regHost,
+            ];
+        }
 
         $imported = 0;
         $now = now()->format('Y-m-d H:i:s');
@@ -128,6 +161,8 @@ class LateExamService
             'existing' => $existing,
             'imported' => $imported,
             'preview' => $mapped->take(20)->values()->all(),
+            'reg_database' => $regDatabase,
+            'reg_host' => $regHost,
         ];
     }
 
