@@ -165,7 +165,8 @@
             </div>
         </div>
 
-        <form class="import-form" method="GET" action="{{ route('late-exam.import') }}">
+        <form class="import-form" method="POST" action="{{ route('late-exam.import.store') }}" onsubmit="if (event.submitter && event.submitter.classList.contains('btn-primary')) { const button = event.submitter; setTimeout(() => { button.disabled = true; }, 0); }">
+            @csrf
             <input type="hidden" name="preview" value="1">
             <div class="field">
                 <label for="year">
@@ -189,18 +190,10 @@
                 </select>
             </div>
             <div class="actions">
-                <button class="btn" type="submit">
+                <button class="btn" type="submit" formmethod="GET" formaction="{{ route('late-exam.import') }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
                     ดูตัวอย่างจำนวน
                 </button>
-            </div>
-        </form>
-
-        <form method="POST" action="{{ route('late-exam.import.store') }}" style="margin-top:1rem" onsubmit="this.querySelector('button').disabled=true">
-            @csrf
-            <input type="hidden" name="year" value="{{ $year }}">
-            <input type="hidden" name="term" value="{{ $term }}">
-            <div class="actions">
                 <button class="btn btn-primary" type="submit">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3v10"/><path d="M8.5 9.5 12 13l3.5-3.5"/><path d="M5 18h14"/></svg>
                     นำเข้า / แทนที่ข้อมูลภาคนี้
@@ -222,7 +215,11 @@
                 </div>
                 <div>
                     <h2>ผลการนำเข้า / ตัวอย่าง</h2>
-                    <span class="sub">สรุปจำนวนและตัวอย่างสูงสุด 20 รายการ</span>
+                    <span class="sub">
+                        ปีการศึกษา {{ (int) ($viewData['year'] ?? 0) }}
+                        · {{ (int) ($viewData['term'] ?? 0) === 1 ? 'ภาคต้น' : 'ภาคปลาย' }}
+                        · สรุปจำนวนและตัวอย่างสูงสุด 20 รายการ
+                    </span>
                 </div>
             </div>
 
